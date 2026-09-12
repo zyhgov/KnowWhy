@@ -334,3 +334,9 @@
 - 方案:`.footer-mascot` 绝对定位站在页脚右下角——1080px 内容容器外的侧边空白区——不参与文档流(不撑高页脚、不挤压任何列);`left: calc(50% + 33.75rem + 1rem)` 对齐容器右缘外侧;高度 `clamp(110px, 9vw, 150px)` 随视口微调;`pointer-events: none` 不挡点击;`alt=""` + `aria-hidden` 纯装饰;页脚 `position: relative` + `overflow: hidden` 防溢出。
 - 窄屏适配:≤1360px 无侧边空白时自动隐藏,避免遮挡内容。
 - 验证:`npm run build` 一次通过(28 页面,11.50s);产物含 footer-mascot 与图片引用。
+
+### 17:38 - 部署上线与 /sitemap.xml 入口补全
+- 上线前检查:SEO 配置全齐(canonical/sitemap/OG/图标/lang 均正常);修复四项——新增 `404.astro`(此前缺失,与新闻承诺的「托腮小问」对齐)、新增 `public/robots.txt`、`.gitignore` 补 `.wrangler/`、重写 README(项目说明+部署参数)。
+- 代码托管:初始化 git 仓库并推送 https://github.com/zyhgov/KnowWhy(135 文件,node_modules/dist 已排除);用户已完成 Cloudflare 部署,站点上线 `https://knowwhy.zyhorg.cn`。
+- 问题:访问 `/sitemap.xml` 返回 404。根因:@astrojs/sitemap 默认生成入口为 `sitemap-index.xml`(+`sitemap-0.xml`),从无 `sitemap.xml` 文件名。
+- 修复:新增 `public/sitemap.xml`(sitemapindex 格式转发 sitemap-0.xml,惯例地址直接可用);`robots.txt` 的 Sitemap 行改为 `/sitemap.xml`。(45000 条 URL 拆分时需在 sitemap.xml 追加引用——见文件注释)

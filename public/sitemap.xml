@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 站点地图入口:实际 URL 列表由 @astrojs/sitemap 在构建时生成(sitemap-0.xml),
+     此文件以 sitemapindex 格式转发,使惯例地址 /sitemap.xml 直接可用。
+     注意:站点 URL 超过 45000 条时 sitemap-0.xml 会拆分,届时在此追加引用。 -->
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+	<sitemap>
+		<loc>https://knowwhy.zyhorg.cn/sitemap-0.xml</loc>
+	</sitemap>
+</sitemapindex>
