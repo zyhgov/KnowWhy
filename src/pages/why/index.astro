@@ -1,0 +1,112 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import WhyCard from '../../components/WhyCard.astro';
+import EntriesToolbar from '../../components/EntriesToolbar.astro';
+import { formatAuthorNames, getCategory } from '../../consts';
+import { byNewest, formatDate, getWhyHref } from '../../utils';
+
+// WHY 编号总目录:全部已发布内容,最新在前(日期倒序,同日按编号倒序)
+const entries = (await getCollection('why', ({ data }) => data.status === 'published')).sort(byNewest);
+---
+
+<BaseLayout
+	title="WHY · 为什么"
+	description="KnowWhy「WHY」内容线:每一个编号对应一个真实的问题——从日常到元问题,追溯它背后的原理与答案。"
+>
+	<nav class="crumbs" aria-label="面包屑">
+		<ol>
+			<li><a href="/">首页</a></li>
+			<li aria-current="page">WHY</li>
+		</ol>
+	</nav>
+
+	<header class="page-head">
+		<h1>WHY · 为什么</h1>
+		<p>
+			「为什么」内容线:每一个编号对应一个真实的问题——从日常琐事到科技、自然、社会与元问题,追溯它背后的原理与答案。
+		</p>
+	</header>
+
+	{
+		entries.length > 0 ? (
+			<div class="entries-browser" data-per-page="10" data-default-view="card">
+				<EntriesToolbar total={entries.length} defaultView="card" />
+				<ul class="why-list why-list-wide" data-view-panel="card">
+					{entries.map((entry) => (
+						<li data-entry>
+							<WhyCard entry={entry} wide />
+						</li>
+					))}
+				</ul>
+				<div class="entries-table-wrap" data-view-panel="list" hidden>
+					<table class="entries-table">
+						<thead>
+							<tr>
+								<th>编号</th>
+								<th>标题</th>
+								<th>分类</th>
+								<th>标签</th>
+								<th>日期</th>
+								<th>作者</th>
+							</tr>
+						</thead>
+						<tbody>
+							{entries.map((entry) => (
+								<tr data-entry>
+									<td class="cell-id">{entry.data.id}</td>
+									<td>
+										<a href={getWhyHref(entry)}>{entry.data.title}</a>
+									</td>
+									<td>{getCategory(entry.data.category)?.name}</td>
+									<td>{entry.data.tags.join(' / ')}</td>
+									<td>{formatDate(entry.data.date)}</td>
+									<td>{formatAuthorNames(entry.data.authors)}</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+				<nav class="entries-pager" data-pager aria-label="分页" hidden></nav>
+			</div>
+		) : (
+			<div class="empty">
+				<p>还没有已发布的内容——第一篇 WHY 正在路上。</p>
+			</div>
+		)
+	}
+</BaseLayout>
+
+<script>
+	import '../../scripts/entries-browser';
+</script>
+
+<style>
+	.page-head {
+		margin-block: 1.25rem 2rem;
+	}
+
+	.page-head h1 {
+		font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+	}
+
+	.page-head p {
+		max-width: 56ch;
+		margin-top: 0.5rem;
+		color: var(--text-muted);
+	}
+
+	.empty {
+		padding: 3rem 1.5rem;
+		text-align: center;
+		color: var(--text-muted);
+		border: 1px dashed var(--line);
+		border-radius: var(--radius-md);
+		background: var(--paper);
+	}
+
+	/* 表格视图中的 WHY 编号:琥珀色 */
+	.cell-id {
+		color: var(--amber-deep);
+	}
+</style>

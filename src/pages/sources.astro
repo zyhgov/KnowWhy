@@ -1,0 +1,201 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getKnowHref, getWhyHref } from '../utils';
+
+// 信息来源页:资料规范说明 + 自动汇总全部已发布文章在 frontmatter sources 中标注的出处
+const [whyEntries, knowEntries] = await Promise.all([
+	getCollection('why', ({ data }) => data.status === 'published'),
+	getCollection('know', ({ data }) => data.status === 'published'),
+]);
+
+function byDateDesc<T extends { data: { date: Date } }>(a: T, b: T) {
+	return b.data.date.getTime() - a.data.date.getTime();
+}
+
+const groups = [
+	...whyEntries.sort(byDateDesc).map((entry) => ({
+		type: 'why' as const,
+		id: entry.data.id,
+		title: entry.data.title,
+		href: getWhyHref(entry),
+		sources: entry.data.sources ?? [],
+	})),
+	...knowEntries.sort(byDateDesc).map((entry) => ({
+		type: 'know' as const,
+		id: entry.data.id,
+		title: entry.data.title,
+		href: getKnowHref(entry),
+		sources: entry.data.sources ?? [],
+	})),
+].filter((group) => group.sources.length > 0);
+
+const totalSources = groups.reduce((sum, group) => sum + group.sources.length, 0);
+---
+
+<BaseLayout
+	title="信息来源"
+	description="KnowWhy 信息来源规范与全部出处汇总:每篇文章都标注资料来源,便于核对与延伸阅读。"
+>
+	<nav class="crumbs" aria-label="面包屑">
+		<ol>
+			<li><a href="/">首页</a></li>
+			<li aria-current="page">信息来源</li>
+		</ol>
+	</nav>
+
+	<header class="page-head">
+		<h1>信息来源</h1>
+		<p>
+			每一篇「为什么」都会在文末标注它的资料来源。本页汇总全部出处,目前涵盖 {groups.length} 篇文章、{totalSources} 条来源,便于核对与延伸阅读。
+		</p>
+	</header>
+
+	<section class="source-notes" aria-label="资料规范">
+		<h2>资料规范</h2>
+		<ul>
+			<li>优先采用:百科全书、学术论文与教材、官方文档、权威媒体报道;</li>
+			<li>来源用于呈现文章的取证基础,文章观点与来源并非一一对应;</li>
+			<li>如发现来源失效或有误,欢迎邮件反馈:info@zyhorg.cn。</li>
+		</ul>
+	</section>
+
+	{
+		groups.length === 0 ? (
+			<p class="source-empty">来源记录整理中,敬请期待。</p>
+		) : (
+			<section class="sources-list" aria-label="全部来源">
+				{groups.map((group) => (
+					<article class="source-group">
+						<h2 class="source-title">
+							<span class:list={['source-serial', group.type === 'why' ? 'is-why' : 'is-know']}>{group.id}</span>
+							<a href={group.href}>{group.title}</a>
+						</h2>
+						<ul class="source-links">
+							{group.sources.map((source) => (
+								<li>
+									<a href={source.url} target="_blank" rel="noopener noreferrer">
+										{source.name}
+									</a>
+								</li>
+							))}
+						</ul>
+					</article>
+				))}
+			</section>
+		)
+	}
+</BaseLayout>
+
+<style>
+	.page-head {
+		margin-block: 1.25rem 2rem;
+	}
+
+	.page-head h1 {
+		font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+	}
+
+	.page-head p {
+		max-width: 60ch;
+		margin-top: 0.5rem;
+		color: var(--text-muted);
+	}
+
+	/* 资料规范说明卡 */
+	.source-notes {
+		max-width: 680px;
+		padding: 1.25rem 1.4rem;
+		background: var(--mist);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-md);
+	}
+
+	.source-notes h2 {
+		font-size: 1rem;
+	}
+
+	.source-notes ul {
+		display: grid;
+		gap: 0.4rem;
+		margin-top: 0.6rem;
+		padding-left: 1.1rem;
+		font-size: 0.9rem;
+		line-height: 1.7;
+		color: var(--text);
+	}
+
+	.sources-list {
+		display: grid;
+		gap: 1rem;
+		margin-top: 1.75rem;
+	}
+
+	/* 每篇文章一组:标题行 + 来源链接列表 */
+	.source-group {
+		padding: 1.15rem 1.35rem;
+		background: var(--paper);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-md);
+		box-shadow: var(--shadow-card);
+	}
+
+	.source-title {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		font-size: 1.02rem;
+	}
+
+	.source-serial {
+		flex-shrink: 0;
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		font-weight: 600;
+		padding: 0.12rem 0.55rem;
+		border-radius: 999px;
+	}
+
+	.source-serial.is-why {
+		color: var(--amber-deep);
+		background: var(--amber-soft);
+	}
+
+	.source-serial.is-know {
+		color: var(--blue-deep);
+		background: var(--blue-soft);
+	}
+
+	.source-title a {
+		color: var(--ink-deep);
+	}
+
+	.source-title a:hover {
+		color: var(--blue);
+	}
+
+	.source-links {
+		display: grid;
+		gap: 0.35rem;
+		margin-top: 0.7rem;
+		padding-left: 1.1rem;
+		font-size: 0.88rem;
+		line-height: 1.65;
+	}
+
+	.source-links a {
+		color: var(--text-muted);
+		text-decoration: underline;
+		text-decoration-color: color-mix(in srgb, var(--text-muted) 40%, transparent);
+		text-underline-offset: 2px;
+	}
+
+	.source-links a:hover {
+		color: var(--blue-deep);
+	}
+
+	.source-empty {
+		margin-top: 1.75rem;
+		color: var(--text-muted);
+	}
+</style>

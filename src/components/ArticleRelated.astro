@@ -1,0 +1,150 @@
+---
+/*
+ * 文章底部"相关内容":从全部已发布内容(WHY + Know)随机推荐若干篇,支持"换一批"重新随机。
+ * 初始条目为构建时随机;候选池以 JSON 内嵌,客户端脚本只更新链接文本与地址(不重建 DOM)。
+ */
+import { getCollection } from 'astro:content';
+import { getKnowHref, getWhyHref } from '../utils';
+
+interface Props {
+	/** 当前文章编号(如 WHY.0001 / KNOW.0001),从候选池中排除 */
+	currentId: string;
+	/** 展示数量,默认 4 */
+	count?: number;
+}
+
+const { currentId, count = 4 } = Astro.props;
+
+const [whyEntries, knowEntries] = await Promise.all([
+	getCollection('why', ({ data }) => data.status === 'published'),
+	getCollection('know', ({ data }) => data.status === 'published'),
+]);
+
+const pool = [
+	...whyEntries.map((entry) => ({ id: entry.data.id, title: entry.data.title, href: getWhyHref(entry) })),
+	...knowEntries.map((entry) => ({ id: entry.data.id, title: entry.data.title, href: getKnowHref(entry) })),
+].filter((item) => item.id !== currentId);
+
+// Fisher-Yates 洗牌取前 N(构建时随机)
+const shuffled = [...pool];
+for (let i = shuffled.length - 1; i > 0; i -= 1) {
+	const j = Math.floor(Math.random() * (i + 1));
+	[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+}
+const items = shuffled.slice(0, Math.min(count, shuffled.length));
+
+// 转义 < 防止标题中的标签字符截断内嵌 JSON
+const poolJson = JSON.stringify(pool).replace(/</g, '\\u003c');
+---
+
+{
+	items.length > 0 && (
+		<section class="article-section" data-related>
+			<div class="related-head">
+				<h2>相关内容</h2>
+				{pool.length > items.length && (
+					<button type="button" class="related-refresh" data-related-refresh>
+						换一批
+					</button>
+				)}
+			</div>
+			<ul class="related-list">
+				{items.map((item) => (
+					<li>
+						<a href={item.href} data-related-link data-key={item.id}>
+							{item.id}・{item.title}
+						</a>
+					</li>
+				))}
+			</ul>
+			<script type="application/json" data-related-pool set:html={poolJson} />
+		</section>
+	)
+}
+
+<script>
+	import '../scripts/related-random';
+</script>
+
+<style>
+	.article-section {
+		margin-top: 2.75rem;
+		padding-top: 1.5rem;
+		border-top: 1px solid var(--line);
+	}
+
+	.related-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 0.75rem;
+	}
+
+	.related-head h2 {
+		margin: 0;
+		font-size: 1.15rem;
+	}
+
+	.related-refresh {
+		flex-shrink: 0;
+		padding: 0.3rem 0.95rem;
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		background: var(--paper);
+		font: inherit;
+		font-size: 0.82rem;
+		color: var(--text-muted);
+		cursor: pointer;
+		transition:
+			color 150ms ease,
+			border-color 150ms ease;
+	}
+
+	.related-refresh:hover {
+		border-color: var(--amber);
+		color: var(--amber-deep);
+	}
+
+	.related-list {
+		display: grid;
+		gap: 0.4rem;
+		padding-left: 1.2rem;
+		font-size: 0.92rem;
+	}
+
+	.related-list a {
+		color: var(--ink);
+	}
+
+	.related-list a:hover {
+		color: var(--amber-deep);
+	}
+
+	/* 换一批时的轻量淡入(由脚本切换 is-swapping 触发) */
+	.is-swapping .related-list li {
+		animation: related-in 320ms ease both;
+	}
+
+	@keyframes related-in {
+		from {
+			opacity: 0;
+			transform: translateY(3px);
+		}
+
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.is-swapping .related-list li {
+			animation: none;
+		}
+
+		.related-refresh {
+			transition: none;
+		}
+	}
+</style>

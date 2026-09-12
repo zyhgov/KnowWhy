@@ -1,0 +1,72 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SITE } from '../consts';
+---
+
+<BaseLayout
+	title="提交问题"
+	description="问题提交通道暂未开放:KnowWhy 前期内容由站长亲自撰写,未来将开放提问入口。"
+>
+	<header class="submit-head">
+		<h1>提交你的「为什么」</h1>
+		<p>把你好奇的问题告诉我们 —— 也许下一篇 KnowWhy 就来自你的灵感。</p>
+	</header>
+
+	<!--
+		TODO: 提问通道暂未开放(2026-09,前期内容由站长亲自撰写,暂不接收投稿)。
+		未来开通方案:接入 Supabase 写入(如 supabase.from('why_submissions').insert({...})),
+		并配合 RLS 策略与验证码(Cloudflare Turnstile)防滥用;
+		如需简单过渡也可先恢复 mailto 邮件提交(实现见 work.md「12:14 - 提交页改为邮件提交」)。
+		开通时同步恢复入口:Header 导航、首页 hero 按钮、Footer「关于」列。
+	-->
+	<div class="notice">
+		<p class="notice-title">提交通道暂未开放</p>
+		<p>
+			KnowWhy 目前处于内容积累期,文章由站长亲自撰写;待站点成长后,这里会重新开放提问入口。
+			如有交流需求,欢迎邮件联系:<a href={`mailto:${SITE.email}`}>{SITE.email}</a>。
+		</p>
+	</div>
+</BaseLayout>
+
+<style>
+	.submit-head {
+		max-width: 640px;
+		margin-bottom: 2rem;
+	}
+
+	.submit-head h1 {
+		font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+	}
+
+	.submit-head p {
+		margin-top: 0.5rem;
+		color: var(--text-muted);
+	}
+
+	.notice {
+		max-width: 640px;
+		padding: 1.5rem 1.75rem;
+		background: var(--amber-soft);
+		border: 1px solid color-mix(in srgb, var(--amber) 30%, transparent);
+		border-radius: var(--radius-md);
+	}
+
+	.notice-title {
+		margin-bottom: 0.5rem;
+		font-size: 1rem;
+		font-weight: 700;
+		color: var(--amber-deep);
+	}
+
+	.notice p {
+		font-size: 0.95rem;
+		line-height: 1.75;
+		color: var(--text);
+	}
+
+	.notice a {
+		font-weight: 600;
+		color: var(--amber-deep);
+		text-decoration: underline;
+	}
+</style>

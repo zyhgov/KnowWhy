@@ -1,0 +1,170 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CategoryIcon from '../../components/react/CategoryIcon.tsx';
+import { CATEGORIES } from '../../consts';
+
+// 分类索引:六大主题 + 各分类已发布数量(WHY 与 Know 共用分类,合并计数)
+const whyEntries = await getCollection('why', ({ data }) => data.status === 'published');
+const knowEntries = await getCollection('know', ({ data }) => data.status === 'published');
+const countByCategory = new Map<string, number>();
+for (const entry of [...whyEntries, ...knowEntries]) {
+	countByCategory.set(entry.data.category, (countByCategory.get(entry.data.category) ?? 0) + 1);
+}
+---
+
+<BaseLayout
+	title="分类"
+	description="KnowWhy 六大主题分类:日常、科技、自然、社会、心智与元——按主题浏览全部「为什么」。"
+>
+	<nav class="crumbs" aria-label="面包屑">
+		<ol>
+			<li><a href="/">首页</a></li>
+			<li aria-current="page">分类</li>
+		</ol>
+	</nav>
+
+	<header class="page-head">
+		<h1>分类浏览</h1>
+		<p>六大主题,从日常小事到元问题——按兴趣随意逛。</p>
+	</header>
+
+	<section class="category-grid" aria-label="全部分类">
+		{
+			CATEGORIES.map((category) => (
+				<a
+					class="category-card"
+					href={`/${category.slug}/`}
+					style={`--tone: ${category.tone.deep}; --tone-soft: ${category.tone.soft};`}
+				>
+					<span class="category-icon">
+						<CategoryIcon category={category.slug} size={30} />
+					</span>
+					<span class="category-name">{category.name}</span>
+					<span class="category-desc">{category.description}</span>
+					<ul class="category-topics">
+						{category.topics.map((topic) => (
+							<li>{topic}</li>
+						))}
+					</ul>
+					<span class="category-count">
+						<strong>{countByCategory.get(category.slug) ?? 0}</strong> 篇
+					</span>
+				</a>
+			))
+		}
+	</section>
+</BaseLayout>
+
+<style>
+	.page-head {
+		margin-block: 1.25rem 2rem;
+	}
+
+	.page-head h1 {
+		font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+	}
+
+	.page-head p {
+		max-width: 56ch;
+		margin-top: 0.5rem;
+		color: var(--text-muted);
+	}
+
+	.category-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 1.15rem;
+	}
+
+	/* 分类卡:按分类主题着色(--tone / --tone-soft 由行内样式注入),图标居右上角 */
+	.category-card {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+		padding: 1.6rem 1.5rem;
+		background: var(--tone-soft);
+		border: 1px solid color-mix(in srgb, var(--tone) 22%, transparent);
+		border-radius: var(--radius-md);
+		transition:
+			transform 150ms ease,
+			border-color 150ms ease,
+			box-shadow 150ms ease;
+	}
+
+	.category-card:hover {
+		transform: translateY(-3px);
+		border-color: var(--tone);
+		box-shadow: var(--shadow-card-hover);
+	}
+
+	.category-icon {
+		position: absolute;
+		top: 1.2rem;
+		right: 1.2rem;
+		display: inline-flex;
+		color: var(--tone);
+	}
+
+	.category-name {
+		font-size: 1.35rem;
+		font-weight: 750;
+		letter-spacing: 0.01em;
+		color: var(--ink-deep);
+		/* 给右上角图标留出空间 */
+		padding-right: 2.4rem;
+	}
+
+	.category-desc {
+		font-size: 0.95rem;
+		line-height: 1.65;
+		color: var(--text);
+	}
+
+	/* 子话题 chips:按分类主题色上色 */
+	.category-topics {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		padding: 0;
+		list-style: none;
+	}
+
+	.category-topics li {
+		font-size: 0.76rem;
+		font-weight: 600;
+		color: var(--tone);
+		background: rgb(255 255 255 / 72%);
+		border: 1px solid color-mix(in srgb, var(--tone) 22%, transparent);
+		border-radius: 999px;
+		padding: 0.1rem 0.55rem;
+	}
+
+	.category-count {
+		margin-top: auto;
+		padding-top: 0.85rem;
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--tone);
+	}
+
+	.category-count strong {
+		margin-right: 0.1rem;
+		font-size: 1.6rem;
+		font-weight: 750;
+		line-height: 1;
+	}
+
+	@media (max-width: 960px) {
+		.category-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (max-width: 560px) {
+		.category-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

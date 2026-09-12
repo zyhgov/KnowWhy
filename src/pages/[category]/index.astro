@@ -1,0 +1,125 @@
+---
+import { getCollection } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import WhyCard from '../../components/WhyCard.astro';
+import KnowCard from '../../components/KnowCard.astro';
+import { CATEGORIES } from '../../consts';
+import { byNewest } from '../../utils';
+
+// 动态生成六大分类页:/everyday/ /tech/ /nature/ /society/ /mind/ /meta/
+export const getStaticPaths = (() =>
+	CATEGORIES.map((category) => ({
+		params: { category: category.slug },
+		props: { category },
+	}))) satisfies GetStaticPaths;
+
+interface Props {
+	category: (typeof CATEGORIES)[number];
+}
+
+const { category } = Astro.props;
+
+const whyEntries = (
+	await getCollection(
+		'why',
+		({ data }) => data.category === category.slug && data.status === 'published',
+	)
+).sort(byNewest);
+
+// WHY 与 Know 共用分类:同一分类下两条内容线分别展示
+const knowEntries = (
+	await getCollection(
+		'know',
+		({ data }) => data.category === category.slug && data.status === 'published',
+	)
+).sort(byNewest);
+---
+
+<BaseLayout
+	title={category.name}
+	description={`KnowWhy「${category.name}」分类:${category.description}`}
+>
+	<nav class="crumbs" aria-label="面包屑">
+		<ol>
+			<li><a href="/">首页</a></li>
+			<li aria-current="page">{category.name}</li>
+		</ol>
+	</nav>
+
+	<header class="category-head">
+		<h1>{category.name}</h1>
+		<p>{category.description}</p>
+	</header>
+
+	{
+		whyEntries.length + knowEntries.length > 0 ? (
+			<>
+				{whyEntries.length > 0 && (
+					<section class="category-section">
+						<div class="section-head">
+							<h2>WHY · 为什么</h2>
+							<span class="section-note">{whyEntries.length} 篇</span>
+						</div>
+						<ul class="why-list">
+							{whyEntries.map((entry) => (
+								<li>
+									<WhyCard entry={entry} />
+								</li>
+							))}
+						</ul>
+					</section>
+				)}
+				{knowEntries.length > 0 && (
+					<section class="category-section">
+						<div class="section-head">
+							<h2>Know · 你知道吗</h2>
+							<span class="section-note">{knowEntries.length} 则</span>
+						</div>
+						<ul class="why-list">
+							{knowEntries.map((entry) => (
+								<li>
+									<KnowCard entry={entry} />
+								</li>
+							))}
+						</ul>
+					</section>
+				)}
+			</>
+		) : (
+			<div class="empty">
+				<p>该分类的内容正在筹备中,敬请期待。</p>
+			</div>
+		)
+	}
+</BaseLayout>
+
+<style>
+	.category-head {
+		margin-block: 1.25rem 2rem;
+	}
+
+	.category-head h1 {
+		font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+	}
+
+	.category-head p {
+		max-width: 52ch;
+		margin-top: 0.5rem;
+		color: var(--text-muted);
+	}
+
+	/* 两条内容线区块间距 */
+	.category-section + .category-section {
+		margin-top: 2.75rem;
+	}
+
+	.empty {
+		padding: 3rem 1.5rem;
+		text-align: center;
+		color: var(--text-muted);
+		border: 1px dashed var(--line);
+		border-radius: var(--radius-md);
+		background: var(--paper);
+	}
+</style>

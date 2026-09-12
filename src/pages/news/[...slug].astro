@@ -1,0 +1,69 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleHead from '../../components/ArticleHead.astro';
+import ArticleToc from '../../components/ArticleToc.astro';
+import { formatDate } from '../../utils';
+
+// 为所有已发布新闻生成详情页:/news/<slug>/
+export const getStaticPaths = (async () => {
+	const entries = await getCollection('news', ({ data }) => data.status === 'published');
+	return entries.map((entry) => ({
+		params: { slug: entry.id },
+		props: { entry },
+	}));
+}) satisfies GetStaticPaths;
+
+interface Props {
+	entry: CollectionEntry<'news'>;
+}
+
+const { entry } = Astro.props;
+const { data } = entry;
+const { Content, headings } = await render(entry);
+---
+
+<BaseLayout
+	title={data.title}
+	description={data.summary ?? `${data.title} —— KnowWhy 站点新闻。`}
+	ogType="article"
+	ogImage={data.ogImage}
+>
+	<Fragment slot="after-header">
+		<ArticleToc headings={headings} />
+	</Fragment>
+
+	<article class="article">
+		<nav class="crumbs" aria-label="面包屑">
+			<ol>
+				<li><a href="/">首页</a></li>
+				<li><a href="/news/">站点新闻</a></li>
+				<li aria-current="page">{formatDate(data.date)}</li>
+			</ol>
+		</nav>
+
+		<ArticleHead date={data.date} title={data.title} authors={data.authors} />
+
+		{data.summary && <p class="news-lead">{data.summary}</p>}
+
+		<div class="prose">
+			<Content />
+		</div>
+	</article>
+</BaseLayout>
+
+<style>
+	.article {
+		max-width: 860px;
+		margin-inline: auto;
+	}
+
+	.news-lead {
+		margin-top: -1rem;
+		margin-bottom: 1.75rem;
+		font-size: 1.05rem;
+		color: var(--text-muted);
+	}
+</style>

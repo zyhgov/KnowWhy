@@ -1,0 +1,30 @@
+---
+id: "KNOW.0000"
+title: "示例:KNOW 内容线使用说明"
+authors: ["zyhorg"]
+category: "tech"
+tags: ["站点说明"]
+date: 2026-09-12
+status: "draft"
+sources:
+  - name: "KnowWhy 站点"
+    url: "https://knowwhy.zyhorg.cn"
+---
+
+这是「Know」内容线的示例文件,演示 KNOW 编号的写法与发布流程。
+
+把 `status` 从 `draft` 改为 `published` 后,本文件会出现在 /know/ 归档页。正式发布前请替换标题与正文,并把 `id` 改成下一个可用编号(如 `KNOW.0002`)。
+
+## 字段说明
+
+- `id`:KNOW 编号,从 `KNOW.0001` 开始依次递增;
+- `title`:知识点标题,建议使用「你知道吗?……」的句式;
+- `authors`:作者 key 数组(在 `src/consts.ts` 的 `AUTHORS` 注册),支持多作者,如 `["zyhorg"]` 或 `["zyhorg", "other"]`;
+- `category`:所属分类(与 WHY 共用六大分类):everyday / tech / nature / society / mind / meta;
+- `tags`:标签数组,列表卡片显示前 3 个;
+- `date`:发布日期,格式 `YYYY-MM-DD`;
+- `status`:`draft`(草稿)/ `published`(已发布)/ `archived`(归档);
+- `sources`:参考资料列表(可选);
+- `related`:关联其他 KNOW 编号(可选),如 `["KNOW.0002"]`。
+
+> 也可以直接复制本文件为模板:改名后替换标题与正文,再调整编号即可发布新内容。

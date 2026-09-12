@@ -1,0 +1,150 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { getCategory } from '../consts';
+import { formatDate, getKnowHref } from '../utils';
+import AuthorInline from './AuthorInline.astro';
+
+interface Props {
+	entry: CollectionEntry<'know'>;
+	/** 宽卡布局:归档页卡片视图单列通栏使用,视觉对齐新闻卡片 */
+	wide?: boolean;
+}
+
+const { entry, wide = false } = Astro.props;
+const { data } = entry;
+const category = getCategory(data.category);
+---
+
+<article class="know-card">
+	<a class:list={['card-link', { 'is-wide': wide }]} href={getKnowHref(entry)}>
+		<div class="card-top">
+			<span class="card-id">{data.id}</span>
+			<time class="card-date" datetime={data.date.toISOString()}>{formatDate(data.date)}</time>
+		</div>
+		<h3 class="card-title">{data.title}</h3>
+		<div class="card-bottom">
+			{category && <span class="card-category">{category.name}</span>}
+			<ul class="card-tags">
+				{data.tags.map((tag) => (
+					<li>{tag}</li>
+				))}
+			</ul>
+			<AuthorInline authors={data.authors} showNames={false} />
+		</div>
+	</a>
+</article>
+
+<style>
+	/* 与 WhyCard 视觉同源;编号与悬停色采用 Know 线的蓝色系 */
+	.know-card {
+		height: 100%;
+	}
+
+	.card-link {
+		display: flex;
+		flex-direction: column;
+		gap: 0.65rem;
+		height: 100%;
+		padding: 1.15rem 1.25rem;
+		background: var(--paper);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-md);
+		box-shadow: var(--shadow-card);
+		transition:
+			transform 160ms ease,
+			box-shadow 160ms ease,
+			border-color 160ms ease;
+	}
+
+	.card-link:hover {
+		transform: translateY(-3px);
+		border-color: var(--blue);
+		box-shadow: var(--shadow-card-hover);
+	}
+
+	.card-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+	}
+
+	.card-id {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--blue-deep);
+		background: var(--blue-soft);
+		padding: 0.12rem 0.55rem;
+		border-radius: 999px;
+	}
+
+	.card-date {
+		font-size: 0.78rem;
+		color: var(--text-muted);
+	}
+
+	.card-title {
+		font-size: 1.05rem;
+		line-height: 1.5;
+	}
+
+	.card-bottom {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.6rem;
+		margin-top: auto;
+		padding-top: 0.35rem;
+	}
+
+	.card-category {
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--ink);
+	}
+
+	/* 标签:全部展示;单行不换行(避免撑高卡片),空间不足可横向轻滑,宽卡下自然更长 */
+	.card-tags {
+		display: flex;
+		flex: 1 1 0;
+		flex-wrap: nowrap;
+		gap: 0.4rem;
+		min-width: 0;
+		overflow-x: auto;
+		scrollbar-width: none;
+		list-style: none;
+		padding: 0;
+	}
+
+	.card-tags::-webkit-scrollbar {
+		display: none;
+	}
+
+	.card-tags li {
+		flex-shrink: 0;
+		font-size: 0.72rem;
+		color: var(--text-muted);
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		padding: 0.02rem 0.5rem;
+	}
+
+	/* 作者推到卡片底部行尾 */
+	.card-bottom :global(.author-inline) {
+		margin-left: auto;
+	}
+
+	/* 宽卡(单列通栏):间距/标题放大,行头左对齐聚合,与新闻卡片观感一致 */
+	.card-link.is-wide {
+		padding: 1.35rem 1.5rem;
+	}
+
+	.card-link.is-wide .card-top {
+		justify-content: flex-start;
+	}
+
+	.card-link.is-wide .card-title {
+		font-size: 1.2rem;
+	}
+</style>

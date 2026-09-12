@@ -1,0 +1,548 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import WhyCard from '../components/WhyCard.astro';
+import KnowCard from '../components/KnowCard.astro';
+import CategoryNav from '../components/CategoryNav.astro';
+import { SITE, getCategory } from '../consts';
+import { byNewest, getKnowHref, getWhyHref } from '../utils';
+
+// 已发布内容,最新在前(日期倒序,同日按编号倒序)
+const entries = (await getCollection('why', ({ data }) => data.status === 'published')).sort(byNewest);
+const latest = entries.slice(0, 6);
+
+const knowEntries = (await getCollection('know', ({ data }) => data.status === 'published')).sort(byNewest);
+const latestKnow = knowEntries.slice(0, 3);
+
+/** 从正文提取纯文本导语(供发现区卡片展示):取前两个普通段落,跳过标题与组件行 */
+const toExcerpt = (body: string | undefined, max = 96): string => {
+	const paragraphs = (body ?? '')
+		.replace(/\r\n?/g, '\n')
+		.split(/\n{2,}/)
+		.map((block) => block.trim())
+		.filter((block) => block.length > 0 && !/^[#<!`|>-]/.test(block));
+	const text = paragraphs
+		.slice(0, 2)
+		.join(' ')
+		.replace(/```[\s\S]*?```/g, ' ')
+		.replace(/<[^>]+>/g, ' ')
+		.replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+		.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+		.replace(/[#*_>`~]/g, ' ')
+		.replace(/\s+/g, ' ')
+		.trim();
+	return text.length > max ? `${text.slice(0, max)}…` : text;
+};
+
+// 「今日发现」数据源:WHY + Know 全部已发布条目(客户端按本地日期/随机数选取,见 home-discover.ts)
+const discoverItems = [
+	...entries.map((entry) => ({
+		type: 'why' as const,
+		label: 'WHY',
+		serial: entry.data.id,
+		title: entry.data.title,
+		excerpt: toExcerpt(entry.body),
+		category: getCategory(entry.data.category)?.name ?? '',
+		tags: entry.data.tags.slice(0, 3),
+		url: getWhyHref(entry),
+	})),
+	...knowEntries.map((entry) => ({
+		type: 'know' as const,
+		label: 'Know',
+		serial: entry.data.id,
+		title: entry.data.title,
+		excerpt: toExcerpt(entry.body),
+		category: getCategory(entry.data.category)?.name ?? '',
+		tags: entry.data.tags.slice(0, 3),
+		url: getKnowHref(entry),
+	})),
+];
+
+// 服务端渲染兜底:发现区先显示前两条,脚本加载后替换为「今日阅读 / 随机词条」
+const fallbackItem = {
+	type: 'why' as const,
+	label: 'WHY',
+	serial: 'WHY.0000',
+	title: '内容筹备中,敬请期待',
+	excerpt: '第一篇「为什么」正在路上。',
+	category: '',
+	tags: [] as string[],
+	url: '/why/',
+};
+const dailyFallback = discoverItems[0] ?? fallbackItem;
+const randomFallback = discoverItems[1] ?? dailyFallback;
+---
+
+<BaseLayout description={SITE.description}>
+	<!-- Hero -->
+	<section class="hero">
+		<div class="hero-main">
+			<p class="hero-kicker">KnowWhy · 知其所以然</p>
+			<h1 class="hero-title">知其然,<br />更要知其所以然。</h1>
+			<p class="hero-lead">
+				每一个「为什么」,都是一次对世界运转方式的追问。KnowWhy 收集并梳理这些问题,给出有来源、可追溯的答案。
+			</p>
+			<div class="hero-actions">
+				<a class="btn btn-primary" href="#latest">浏览最新 WHY</a>
+				<a class="btn btn-ghost" href="#latest-know">浏览最新 Know</a>
+			</div>
+		</div>
+	</section>
+
+	<!-- 今日发现:每日阅读 + 随机词条(客户端脚本按本地日期/随机数选取) -->
+	<section class="home-section discover-section">
+		<div class="section-head">
+			<h2>今日发现</h2>
+			<span class="section-note">每日更新 · 随手翻翻</span>
+		</div>
+
+		<div class="discover-grid">
+			<!-- 今日阅读:以本地日期为种子,每天固定一条 -->
+			<article class="discover-card is-daily" id="daily-card">
+				<div class="discover-content">
+					<div class="discover-top">
+						<span class="discover-badge">今日阅读</span>
+						<span class="discover-serial" id="daily-serial">{dailyFallback.serial}</span>
+					</div>
+					<h3 class="discover-title" id="daily-title">{dailyFallback.title}</h3>
+					<p class="discover-excerpt" id="daily-excerpt">{dailyFallback.excerpt}</p>
+					<div class="discover-bottom">
+						<ul class="discover-tags" id="daily-tags">
+							{dailyFallback.tags.map((tag) => (
+								<li>{tag}</li>
+							))}
+						</ul>
+						<a class="discover-link" id="daily-link" href={dailyFallback.url}>阅读全文 →</a>
+					</div>
+				</div>
+			</article>
+
+			<!-- 随机词条:点击「换一条」随机切换 -->
+			<article class="discover-card is-random" id="random-card">
+				<div class="discover-content">
+					<div class="discover-top">
+						<span class="discover-badge">随机词条</span>
+						<button type="button" class="random-refresh" id="random-refresh" aria-label="换一条">
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="14"
+								height="14"
+								viewBox="0 0 24 24"
+								fill="none"
+								aria-hidden="true"
+							>
+								<path
+									fill-rule="evenodd"
+									clip-rule="evenodd"
+									d="M19.4697 4.46967C19.7626 4.17678 20.2374 4.17678 20.5303 4.46967L22.5303 6.46967C22.8232 6.76256 22.8232 7.23744 22.5303 7.53033L20.5303 9.53033C20.2374 9.82322 19.7626 9.82322 19.4697 9.53033C19.1768 9.23744 19.1768 8.76256 19.4697 8.46967L20.1893 7.75H18.3971C17.5531 7.75 16.9733 7.75082 16.517 7.79516C16.077 7.83793 15.8108 7.91703 15.59 8.04205C15.3692 8.16707 15.1644 8.35464 14.9013 8.70996C14.6286 9.07834 14.3295 9.57518 13.8953 10.2989L11.3722 14.5041C10.9613 15.189 10.6254 15.7488 10.3042 16.1826C9.96851 16.636 9.616 16.9989 9.14905 17.2632C8.6821 17.5276 8.18961 17.6432 7.62807 17.6978C7.09086 17.75 6.438 17.75 5.63936 17.75H2C1.58579 17.75 1.25 17.4142 1.25 17C1.25 16.5858 1.58579 16.25 2 16.25H5.60286C6.44685 16.25 7.02675 16.2492 7.48296 16.2048C7.92299 16.1621 8.18919 16.083 8.41 15.9579C8.63081 15.8329 8.8356 15.6454 9.09867 15.29C9.37141 14.9217 9.67046 14.4248 10.1047 13.7011L12.6278 9.49586C13.0387 8.81102 13.3746 8.25119 13.6958 7.8174C14.0315 7.36397 14.384 7.00113 14.851 6.73675C15.3179 6.47237 15.8104 6.35677 16.3719 6.30219C16.9091 6.24998 17.562 6.24999 18.3606 6.25L20.1893 6.25L19.4697 5.53033C19.1768 5.23744 19.1768 4.76256 19.4697 4.46967ZM7.73131 7.79145C7.53519 7.75328 7.31332 7.75 6.66762 7.75H2C1.58579 7.75 1.25 7.41421 1.25 7C1.25 6.58579 1.58579 6.25 2 6.25H6.66762C6.69223 6.25 6.7165 6.24999 6.74045 6.24999C7.28573 6.24986 7.6618 6.24977 8.01789 6.31908C8.81735 6.47469 9.54442 6.88635 10.0892 7.49182C10.3318 7.76151 10.5252 8.08403 10.8057 8.55169C10.818 8.57222 10.8305 8.59303 10.8431 8.61413C11.0562 8.96931 10.9411 9.43001 10.5859 9.64312C10.2307 9.85623 9.76999 9.74106 9.55688 9.38587C9.22467 8.83219 9.10771 8.64362 8.97408 8.49509C8.64722 8.13181 8.21098 7.88481 7.73131 7.79145ZM13.4141 14.3569C13.7693 14.1438 14.23 14.2589 14.4431 14.6141C14.7753 15.1678 14.8923 15.3564 15.0259 15.5049C15.3528 15.8682 15.789 16.1152 16.2687 16.2086C16.4648 16.2467 16.6867 16.25 17.3324 16.25H20.1893L19.4697 15.5303C19.1768 15.2374 19.1768 14.7626 19.4697 14.4697C19.7626 14.1768 20.2374 14.1768 20.5303 14.4697L22.5303 16.4697C22.8232 16.7626 22.8232 17.2374 22.5303 17.5303L20.5303 19.5303C20.2374 19.8232 19.7626 19.8232 19.4697 19.5303C19.1768 19.2374 19.1768 18.7626 19.4697 18.4697L20.1893 17.75H17.3324C17.3078 17.75 17.2835 17.75 17.2595 17.75C16.7143 17.7501 16.3382 17.7502 15.9821 17.6809C15.1826 17.5253 14.4556 17.1137 13.9108 16.5082C13.6682 16.2385 13.4748 15.916 13.1943 15.4483C13.182 15.4278 13.1695 15.407 13.1569 15.3859C12.9438 15.0307 13.0589 14.57 13.4141 14.3569Z"
+									fill="currentColor"></path>
+							</svg>
+							<span>换一条</span>
+						</button>
+					</div>
+					<h3 class="discover-title" id="random-title">{randomFallback.title}</h3>
+					<p class="discover-excerpt" id="random-excerpt">{randomFallback.excerpt}</p>
+					<div class="discover-bottom">
+						<ul class="discover-tags" id="random-tags">
+							{randomFallback.tags.map((tag) => (
+								<li>{tag}</li>
+							))}
+						</ul>
+						<a class="discover-link" id="random-link" href={randomFallback.url}>阅读全文 →</a>
+					</div>
+				</div>
+			</article>
+		</div>
+
+		<!-- 发现区数据(构建期内联,供 home-discover.ts 使用) -->
+		<script
+			type="application/json"
+			id="discover-data"
+			is:inline
+			set:html={JSON.stringify(discoverItems).replace(/</g, '\\u003c')}
+		/>
+	</section>
+
+	<!-- 分类导航 -->
+	<section class="home-section">
+		<div class="section-head">
+			<h2>分类浏览</h2>
+			<span class="section-note">六大主题,持续更新</span>
+		</div>
+		<CategoryNav />
+	</section>
+
+	<!-- 最新 WHY -->
+	<section class="home-section" id="latest">
+		<div class="section-head">
+			<h2>最新 WHY</h2>
+			<a class="more-link" href="/why/">查看更多 →</a>
+		</div>
+		{
+			latest.length > 0 ? (
+				<ul class="why-list">
+					{latest.map((entry) => (
+						<li>
+							<WhyCard entry={entry} />
+						</li>
+					))}
+				</ul>
+			) : (
+				<p class="empty-note">内容筹备中,敬请期待。</p>
+			)
+		}
+	</section>
+
+	<!-- 最新 Know -->
+	<section class="home-section" id="latest-know">
+		<div class="section-head">
+			<h2>最新 Know</h2>
+			<a class="more-link" href="/know/">查看更多 →</a>
+		</div>
+		{
+			latestKnow.length > 0 ? (
+				<ul class="why-list">
+					{latestKnow.map((entry) => (
+						<li>
+							<KnowCard entry={entry} />
+						</li>
+					))}
+				</ul>
+			) : (
+				<p class="empty-note">「你知道吗」内容线正在筹备中,敬请期待。</p>
+			)
+		}
+	</section>
+
+	<!-- 本周热门(占位) -->
+	<section class="home-section">
+		<div class="section-head">
+			<h2>本周热门</h2>
+			<span class="section-note">近期上线</span>
+		</div>
+		<!--
+			TODO: Supabase integration for votes
+			「本周热门」将基于 Supabase 中的投票 / 浏览统计数据生成;当前为占位状态。
+		-->
+		<div class="hot-placeholder">
+			<p>热门排行依赖投票与浏览数据,将在接入 Supabase 后开放。</p>
+		</div>
+	</section>
+
+	<Fragment slot="head">
+		{/*
+			TODO: Schema.org FAQPage(JSON-LD)注入位置
+			建议结构:{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"…","acceptedAnswer":{"@type":"Answer","text":"…"}}]}
+		*/}
+	</Fragment>
+</BaseLayout>
+
+<script>
+	import '../scripts/home-discover';
+</script>
+
+<script>
+	import '../scripts/home-motion';
+</script>
+
+<style>
+	/* Hero:背景为横版吉祥物图(白色调,文本/按钮用深色系);透明区域透出浅色兜底 */
+	.hero {
+		position: relative;
+		overflow: hidden;
+		min-height: 20rem;
+		padding: 3.5rem 2.75rem;
+		background:
+			url('/mascot/横.png') center / cover no-repeat,
+			linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--shadow-card);
+	}
+
+	.hero-main {
+		min-width: 0;
+		max-width: 58%;
+	}
+
+	.hero-kicker {
+		font-size: 0.82rem;
+		font-weight: 600;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--amber-deep);
+	}
+
+	.hero-title {
+		margin-top: 0.6rem;
+		font-size: clamp(1.9rem, 4.2vw, 2.8rem);
+		line-height: 1.3;
+		color: var(--ink-deep);
+	}
+
+	.hero-lead {
+		max-width: 46ch;
+		margin-top: 1.1rem;
+		color: var(--text);
+	}
+
+	.hero-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin-top: 1.85rem;
+	}
+
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.55rem 1.25rem;
+		border-radius: 999px;
+		font-size: 0.92rem;
+		font-weight: 600;
+		transition:
+			transform 150ms ease,
+			background 150ms ease,
+			border-color 150ms ease,
+			color 150ms ease;
+	}
+
+	.btn-primary {
+		background: var(--amber);
+		color: var(--ink-deep);
+	}
+
+	.btn-primary:hover {
+		transform: translateY(-1px);
+		background: #fbbf24;
+	}
+
+	.btn-ghost {
+		border: 1px solid rgb(15 23 42 / 25%);
+		color: var(--ink-deep);
+	}
+
+	.btn-ghost:hover {
+		border-color: var(--amber-deep);
+		color: var(--amber-deep);
+	}
+
+	.home-section {
+		margin-top: 3rem;
+	}
+
+	/* ---- 今日发现:每日阅读 + 随机词条 ---- */
+	.discover-grid {
+		display: grid;
+		grid-template-columns: 1.15fr 1fr;
+		gap: 1rem;
+	}
+
+	.discover-card {
+		display: flex;
+		padding: 1.4rem 1.5rem;
+		background: var(--paper);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-md);
+		box-shadow: var(--shadow-card);
+		transition:
+			transform 160ms ease,
+			box-shadow 160ms ease,
+			border-color 160ms ease;
+	}
+
+	.discover-card:hover {
+		transform: translateY(-2px);
+		box-shadow: var(--shadow-card-hover);
+	}
+
+	.discover-card.is-daily:hover {
+		border-color: var(--amber);
+	}
+
+	.discover-card.is-random:hover {
+		border-color: var(--blue);
+	}
+
+	.discover-content {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 0.65rem;
+		transition:
+			opacity 160ms ease,
+			transform 160ms ease;
+	}
+
+	/* 切换条目时的淡出态(由 home-discover.ts 添加) */
+	.discover-content.is-swapping {
+		opacity: 0;
+		transform: translateY(5px);
+	}
+
+	.discover-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+	}
+
+	.discover-badge {
+		font-size: 0.72rem;
+		font-weight: 600;
+		padding: 0.16rem 0.55rem;
+		border-radius: 999px;
+	}
+
+	.is-daily .discover-badge {
+		color: var(--amber-deep);
+		background: var(--amber-soft);
+	}
+
+	.is-random .discover-badge {
+		color: var(--blue-deep);
+		background: var(--blue-soft);
+	}
+
+	.discover-serial {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--text-muted);
+	}
+
+	.discover-title {
+		font-size: 1.22rem;
+		line-height: 1.45;
+	}
+
+	.discover-excerpt {
+		display: -webkit-box;
+		overflow: hidden;
+		font-size: 0.9rem;
+		line-height: 1.7;
+		color: var(--text-muted);
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 3;
+	}
+
+	.discover-bottom {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.6rem;
+		margin-top: auto;
+		padding-top: 0.2rem;
+	}
+
+	.discover-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		padding: 0;
+		list-style: none;
+	}
+
+	.discover-link {
+		font-size: 0.88rem;
+		font-weight: 600;
+	}
+
+	.is-daily .discover-link {
+		color: var(--amber-deep);
+	}
+
+	.is-random .discover-link {
+		color: var(--blue-deep);
+	}
+
+	.discover-link:hover {
+		text-decoration: underline;
+	}
+
+	.random-refresh {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.32rem;
+		padding: 0.26rem 0.7rem;
+		font-family: inherit;
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: var(--blue-deep);
+		background: var(--blue-soft);
+		border: 1px solid transparent;
+		border-radius: 999px;
+		cursor: pointer;
+		transition:
+			border-color 150ms ease,
+			transform 150ms ease;
+	}
+
+	.random-refresh:hover {
+		border-color: var(--blue);
+		transform: translateY(-1px);
+	}
+
+	.random-refresh svg {
+		display: block;
+	}
+
+	@media (max-width: 860px) {
+		.discover-grid {
+			grid-template-columns: 1fr;
+		}
+
+		/* 小屏:换竖版图(高度铺满容器等比缩放,底部对齐);底部留白加高,避免文本/按钮盖到吉祥物 */
+		.hero {
+			background-image: url('/mascot/竖.png');
+			background-size: auto 100%;
+			background-position: bottom center;
+			padding-bottom: 22rem;
+		}
+
+		.hero-main {
+			max-width: 100%;
+		}
+
+		/* 小屏隐藏 Hero 按钮(竖图下空间留给吉祥物) */
+		.hero-actions {
+			display: none;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.discover-content {
+			transition: none;
+		}
+	}
+
+	.empty-note {
+		color: var(--text-muted);
+	}
+
+	.hot-placeholder {
+		padding: 2.25rem 1.5rem;
+		text-align: center;
+		color: var(--text-muted);
+		font-size: 0.9rem;
+		border: 1px dashed var(--line);
+		border-radius: var(--radius-md);
+		background: repeating-linear-gradient(45deg, #f8fafc, #f8fafc 14px, #f1f5f9 14px, #f1f5f9 28px);
+	}
+
+	@media (max-width: 640px) {
+		.hero {
+			padding: 2.5rem 1.75rem 22rem;
+		}
+	}
+</style>
+
+<!-- 发现区标签 li 由脚本动态生成(无 scoped 属性),使用全局作用域确保样式生效 -->
+<style is:global>
+	.discover-tags li {
+		font-size: 0.66rem;
+		color: var(--text-muted);
+		background: #f1f5f9;
+		border-radius: 999px;
+		padding: 0.12rem 0.55rem;
+	}
+</style>

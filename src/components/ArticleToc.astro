@@ -1,0 +1,198 @@
+---
+/*
+ * 文章目录(TOC):粘滞在固定导航栏下方,汇总 h2/h3,点击展开;
+ * 无 JS 时由 <details> 原生折叠,增强脚本(src/scripts/toc.ts)负责滚动高亮与收起交互。
+ */
+interface TocItem {
+	depth: number;
+	slug: string;
+	text: string;
+}
+
+interface Props {
+	headings: TocItem[];
+}
+
+const { headings } = Astro.props;
+const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+{
+	items.length > 0 && (
+		<nav class="article-toc-wrap" aria-label="文章目录">
+			<details class="article-toc" data-toc>
+				<summary class="toc-toggle">
+					<svg
+						class="toc-icon"
+						xmlns="http://www.w3.org/2000/svg"
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						aria-hidden="true"
+					>
+						<path
+							d="M4 6h16M4 12h10M4 18h13"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+						/>
+					</svg>
+					<span class="toc-label">目录</span>
+					<span class="toc-current" data-toc-current>
+						{items[0].text}
+					</span>
+					<svg
+						class="toc-chevron"
+						xmlns="http://www.w3.org/2000/svg"
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="none"
+						aria-hidden="true"
+					>
+						<path
+							d="m6 9 6 6 6-6"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+					</svg>
+				</summary>
+				<ol class="toc-list">
+					{items.map((h) => (
+						<li class={`toc-item toc-depth-${h.depth}`}>
+							<a href={`#${h.slug}`} data-toc-link data-slug={h.slug}>
+								{h.text}
+							</a>
+						</li>
+					))}
+				</ol>
+			</details>
+		</nav>
+	)
+}
+
+<script>
+	import '../scripts/toc';
+</script>
+
+<style>
+	/* 通栏粘滞条:位于导航栏正下方(页面顶部即贴附),滚动时吸附不动;磨砂半透明,收起无阴影,展开才投影 */
+	.article-toc-wrap {
+		position: sticky;
+		top: var(--header-h, 64px);
+		z-index: 30;
+	}
+
+	.article-toc {
+		background: rgb(255 255 255 / 85%);
+		backdrop-filter: blur(10px);
+		transition: box-shadow 200ms ease;
+	}
+
+	.article-toc[open] {
+		box-shadow: 0 16px 36px rgb(15 23 42 / 14%);
+	}
+
+	.toc-toggle {
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
+		/* 内容左右对齐全站 1080px 容器(窄屏退化为 1.25rem 边距) */
+		padding: 0.7rem max(1.25rem, calc(50% - 33.75rem));
+		cursor: pointer;
+		list-style: none;
+		user-select: none;
+	}
+
+	.toc-toggle::-webkit-details-marker {
+		display: none;
+	}
+
+	.toc-icon {
+		flex-shrink: 0;
+		color: var(--amber-deep);
+	}
+
+	.toc-label {
+		flex-shrink: 0;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--ink-deep);
+	}
+
+	.toc-current {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		font-size: 0.82rem;
+		color: var(--text-muted);
+	}
+
+	.toc-chevron {
+		flex-shrink: 0;
+		color: var(--text-muted);
+		transition: transform 200ms ease;
+	}
+
+	.article-toc[open] .toc-chevron {
+		transform: rotate(180deg);
+	}
+
+	.toc-list {
+		margin: 0;
+		padding: 0.4rem max(1.25rem, calc(50% - 33.75rem)) 0.85rem;
+		list-style: none;
+		max-height: min(56vh, 26rem);
+		overflow-y: auto;
+	}
+
+	.toc-item a {
+		display: block;
+		padding: 0.3rem 0.55rem;
+		border-left: 2px solid transparent;
+		border-radius: 0 6px 6px 0;
+		font-size: 0.86rem;
+		color: var(--text);
+		transition:
+			background 150ms ease,
+			color 150ms ease;
+	}
+
+	.toc-depth-3 a {
+		padding-left: 1.5rem;
+		font-size: 0.82rem;
+		color: var(--text-muted);
+	}
+
+	.toc-item a:hover {
+		background: #f8fafc;
+		color: var(--ink-deep);
+	}
+
+	/* 当前阅读位置高亮 */
+	.toc-item a.is-active {
+		border-left-color: var(--amber);
+		background: rgb(245 158 11 / 8%);
+		color: var(--ink-deep);
+		font-weight: 700;
+	}
+
+	@media (max-width: 640px) {
+		.toc-list {
+			max-height: 50vh;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.article-toc,
+		.toc-chevron,
+		.toc-item a {
+			transition: none;
+		}
+	}
+</style>

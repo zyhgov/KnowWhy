@@ -1,0 +1,21 @@
+---
+/*
+ * 归档页工具栏:卡片/列表视图切换 + 状态文字。
+ * 与 src/scripts/entries-browser.ts 配套使用(样式在 global.css)。
+ */
+interface Props {
+	/** 条目总数(用于状态文字) */
+	total: number;
+	/** 默认视图(无本地偏好时生效):why/know 用 card,新闻用 list */
+	defaultView?: 'card' | 'list';
+}
+const { total, defaultView = 'list' } = Astro.props;
+---
+
+<div class="entries-toolbar">
+	<div class="view-switch" role="group" aria-label="查看方式">
+		<button type="button" data-view-btn="card" aria-pressed={defaultView === 'card'}>卡片</button>
+		<button type="button" data-view-btn="list" aria-pressed={defaultView === 'list'}>列表</button>
+	</div>
+	<p class="entries-status" data-page-status>共 {total} 条</p>
+</div>

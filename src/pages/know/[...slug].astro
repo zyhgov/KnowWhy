@@ -1,0 +1,143 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleHead from '../../components/ArticleHead.astro';
+import ArticleRelated from '../../components/ArticleRelated.astro';
+import { getCategory } from '../../consts';
+import { getKnowHref } from '../../utils';
+
+// 为所有已发布的 KNOW 知识点生成详情页:/know/<slug>/
+export const getStaticPaths = (async () => {
+	const entries = await getCollection('know', ({ data }) => data.status === 'published');
+	return entries.map((entry) => ({
+		params: { slug: entry.id },
+		props: { entry },
+	}));
+}) satisfies GetStaticPaths;
+
+interface Props {
+	entry: CollectionEntry<'know'>;
+}
+
+const { entry } = Astro.props;
+const { data } = entry;
+const { Content } = await render(entry);
+
+// 相关阅读:按 related 中填写的 KNOW 编号匹配已发布内容
+const relatedIds = data.related ?? [];
+const relatedEntries = relatedIds.length
+	? await getCollection(
+			'know',
+			({ data: other }) => relatedIds.includes(other.id) && other.status === 'published',
+		)
+	: [];
+---
+
+<BaseLayout
+	title={data.title}
+	description={`${data.id}・${data.title} —— KnowWhy「你知道吗」:知其然,更要知其所以然。`}
+	ogType="article"
+	ogImage={data.ogImage}
+>
+	<article class="article">
+		<nav class="crumbs" aria-label="面包屑">
+			<ol>
+				<li><a href="/">首页</a></li>
+				<li><a href="/know/">Know</a></li>
+				<li aria-current="page">{data.id}</li>
+			</ol>
+		</nav>
+
+		<ArticleHead
+			id={data.id}
+			date={data.date}
+			title={data.title}
+			tags={data.tags}
+			categoryName={getCategory(data.category)?.name}
+			authors={data.authors}
+		/>
+
+		<div class="prose">
+			<Content />
+		</div>
+
+		{
+			data.sources && data.sources.length > 0 && (
+				<section class="article-section">
+					<h2>参考资料</h2>
+					<ul class="source-list">
+						{data.sources.map((source) => (
+							<li>
+								<a href={source.url} target="_blank" rel="noopener noreferrer">
+									{source.name}
+								</a>
+							</li>
+						))}
+					</ul>
+				</section>
+			)
+		}
+
+		{
+			relatedEntries.length > 0 && (
+				<section class="article-section">
+					<h2>相关阅读</h2>
+					<ul class="related-list">
+						{relatedEntries.map((related) => (
+							<li>
+								<a href={getKnowHref(related)}>
+									{related.data.id}・{related.data.title}
+								</a>
+							</li>
+						))}
+					</ul>
+				</section>
+			)
+		}
+
+		<ArticleRelated currentId={data.id} />
+	</article>
+</BaseLayout>
+
+<style>
+	.article {
+		max-width: 860px;
+		margin-inline: auto;
+	}
+
+	.article-section {
+		margin-top: 2.75rem;
+		padding-top: 1.5rem;
+		border-top: 1px solid var(--line);
+	}
+
+	.article-section h2 {
+		margin-bottom: 0.75rem;
+		font-size: 1.15rem;
+	}
+
+	.source-list,
+	.related-list {
+		display: grid;
+		gap: 0.4rem;
+		padding-left: 1.2rem;
+		font-size: 0.92rem;
+	}
+
+	.source-list a {
+		color: var(--amber-deep);
+		text-decoration: underline;
+		text-decoration-color: rgb(245 158 11 / 45%);
+		text-underline-offset: 3px;
+	}
+
+	.related-list a {
+		color: var(--ink);
+	}
+
+	.related-list a:hover {
+		color: var(--amber-deep);
+	}
+</style>

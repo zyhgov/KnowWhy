@@ -1,0 +1,180 @@
+---
+import { getAuthor } from '../consts';
+import { formatDate } from '../utils';
+import FontSizeSwitcher from './FontSizeSwitcher.astro';
+
+interface Props {
+	/** 文章 / 知识点编号,如 WHY.0001、KNOW.0001(新闻页可不传) */
+	id?: string;
+	date: Date;
+	title: string;
+	tags?: string[];
+	/** 分类名(WHY 文章使用) */
+	categoryName?: string;
+	/** 作者 key 数组(在 consts.AUTHORS 注册),支持多作者 */
+	authors?: string[];
+}
+
+const { id, date, title, tags = [], categoryName, authors = [] } = Astro.props;
+
+// KNOW 编号使用蓝色徽章,与 WHY 的琥珀色区分
+const isKnow = id?.startsWith('KNOW') ?? false;
+
+const authorList = authors.map((key) => getAuthor(key)).filter((author) => author !== undefined);
+---
+
+<header class="article-head">
+	<div class="article-meta">
+		{id && <span class:list={['article-id', { 'is-know': isKnow }]}>{id}</span>}
+		<time datetime={date.toISOString()}>{formatDate(date)}</time>
+		{categoryName && <span class="article-category">{categoryName}</span>}
+		<FontSizeSwitcher />
+	</div>
+	<h1>{title}</h1>
+	{
+		authorList.length > 0 && (
+			<ul class="article-authors">
+				{authorList.map((author) => (
+					<li>
+						<img
+							class="author-avatar"
+							src={author.avatar}
+							alt={author.name}
+							width="36"
+							height="36"
+							loading="lazy"
+						/>
+						<span class="author-text">
+							<span class="author-name">{author.name}</span>
+							{author.email && (
+								<a class="author-contact" href={`mailto:${author.email}`}>{author.email}</a>
+							)}
+							{author.url && (
+								<a class="author-contact" href={author.url} target="_blank" rel="noopener noreferrer">
+									{author.url}
+								</a>
+							)}
+						</span>
+					</li>
+				))}
+			</ul>
+		)
+	}
+	{
+		tags.length > 0 && (
+			<ul class="article-tags">
+				{tags.map((tag) => (
+					<li>{tag}</li>
+				))}
+			</ul>
+		)
+	}
+</header>
+
+<style>
+	.article-head {
+		margin-block: 1.5rem 2.25rem;
+		padding-bottom: 1.5rem;
+		border-bottom: 1px solid var(--line);
+	}
+
+	.article-meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.75rem;
+		margin-bottom: 0.9rem;
+		font-size: 0.85rem;
+		color: var(--text-muted);
+	}
+
+	.article-id {
+		font-family: var(--font-mono);
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: var(--amber-deep);
+		background: var(--amber-soft);
+		padding: 0.15rem 0.6rem;
+		border-radius: 999px;
+	}
+
+	/* KNOW.0001 等编号:蓝色系 */
+	.article-id.is-know {
+		color: var(--blue-deep);
+		background: var(--blue-soft);
+	}
+
+	.article-category {
+		font-weight: 600;
+		color: var(--ink);
+	}
+
+	.article-head h1 {
+		/* 标题较此前放大一档 */
+		font-size: clamp(1.8rem, 4.1vw, 2.5rem);
+		line-height: 1.35;
+	}
+
+	/* 作者区:标题下的署名行(头像 + 名字 + 邮箱 / 网址),多作者并排 */
+	.article-authors {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.85rem 1.75rem;
+		margin-top: 1.1rem;
+		padding: 0;
+		list-style: none;
+	}
+
+	.article-authors li {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+	}
+
+	.author-avatar {
+		width: 36px;
+		height: 36px;
+		border-radius: 999px;
+		object-fit: cover;
+		border: 1px solid var(--line);
+	}
+
+	.author-text {
+		display: flex;
+		flex-direction: column;
+		line-height: 1.4;
+	}
+
+	.author-name {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--ink);
+	}
+
+	.author-contact {
+		font-size: 0.78rem;
+		color: var(--text-muted);
+	}
+
+	.author-contact:hover {
+		color: var(--amber-deep);
+	}
+
+	.article-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.45rem;
+		margin-top: 1rem;
+		padding: 0;
+		list-style: none;
+	}
+
+	.article-tags li {
+		font-size: 0.75rem;
+		color: var(--text-muted);
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		padding: 0.05rem 0.55rem;
+		background: var(--paper);
+	}
+</style>

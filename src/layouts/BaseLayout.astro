@@ -1,0 +1,97 @@
+---
+import { SEO } from 'astro-seo';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import BackToTop from '../components/react/BackToTop.tsx';
+import { SITE } from '../consts';
+import '@fontsource/noto-sans-sc/400.css';
+import '@fontsource/noto-sans-sc/500.css';
+import '@fontsource/noto-sans-sc/600.css';
+import '@fontsource/noto-sans-sc/700.css';
+import '../styles/global.css';
+
+interface Props {
+	/** 页面标题(不含站点后缀);不传时使用站点全称 */
+	title?: string;
+	description?: string;
+	/** og:type,文章页传 'article' */
+	ogType?: 'website' | 'article';
+	/** 页面自定义 og:image(public 下绝对路径);缺省用站点默认图 */
+	ogImage?: string;
+}
+
+const { title, description = SITE.description, ogType = 'website', ogImage } = Astro.props;
+
+const siteName = `${SITE.name}|${SITE.nameZh}`;
+const fullTitle = title ? `${title} | ${siteName}` : `${siteName} — ${SITE.tagline}`;
+const canonicalURL = new URL(Astro.url.pathname, SITE.url);
+const ogImageURL = new URL(ogImage ?? '/kw-og.png', SITE.url);
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="generator" content={Astro.generator} />
+		<!-- 站点图标(public/icon 全套) -->
+		<link rel="apple-touch-icon" sizes="57x57" href="/icon/apple-icon-57x57.png" />
+		<link rel="apple-touch-icon" sizes="60x60" href="/icon/apple-icon-60x60.png" />
+		<link rel="apple-touch-icon" sizes="72x72" href="/icon/apple-icon-72x72.png" />
+		<link rel="apple-touch-icon" sizes="76x76" href="/icon/apple-icon-76x76.png" />
+		<link rel="apple-touch-icon" sizes="114x114" href="/icon/apple-icon-114x114.png" />
+		<link rel="apple-touch-icon" sizes="120x120" href="/icon/apple-icon-120x120.png" />
+		<link rel="apple-touch-icon" sizes="144x144" href="/icon/apple-icon-144x144.png" />
+		<link rel="apple-touch-icon" sizes="152x152" href="/icon/apple-icon-152x152.png" />
+		<link rel="apple-touch-icon" sizes="180x180" href="/icon/apple-icon-180x180.png" />
+		<link rel="icon" type="image/png" sizes="192x192" href="/icon/android-icon-192x192.png" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/icon/favicon-32x32.png" />
+		<link rel="icon" type="image/png" sizes="96x96" href="/icon/favicon-96x96.png" />
+		<link rel="icon" type="image/png" sizes="16x16" href="/icon/favicon-16x16.png" />
+		<link rel="manifest" href="/icon/manifest.json" />
+		<meta name="msapplication-TileColor" content="#ffffff" />
+		<meta name="msapplication-TileImage" content="/icon/ms-icon-144x144.png" />
+		<meta name="theme-color" content="#ffffff" />
+		<!-- astro-seo:基础 meta(title / description / canonical / openGraph) -->
+		<SEO
+			title={fullTitle}
+			description={description}
+			canonical={canonicalURL}
+			openGraph={{
+				basic: {
+					title: fullTitle,
+					type: ogType,
+					image: ogImageURL.href,
+					url: canonicalURL,
+				},
+				image: {
+					alt: siteName,
+				},
+				optional: {
+					locale: 'zh_CN',
+					siteName,
+					description,
+				},
+			}}
+		/>
+		{/*
+			SEO 预留:Schema.org 结构化数据注入位。
+			首页通过 <Fragment slot="head"> 注入 FAQPage,文章页注入 Article(JSON-LD)。
+		*/}
+		<slot name="head" />
+	</head>
+	<body>
+		<Header />
+		{/* 紧贴导航栏下方的粘滞元素插槽(如文章目录条) */}
+		<slot name="after-header" />
+		<main class="site-main">
+			<slot />
+		</main>
+		<Footer />
+		{/*
+			全站唯一的常驻 React 交互组件;纯浏览器交互(滚动监听),SSR 输出无意义,
+			用 client:only 跳过服务端渲染——同时规避 dev 下 SSR 预打包异常对 hooks 的影响。
+		*/}
+		<BackToTop client:only="react" />
+	</body>
+</html>

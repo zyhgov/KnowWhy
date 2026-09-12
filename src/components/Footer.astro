@@ -1,0 +1,189 @@
+---
+import { SITE, CATEGORIES } from '../consts';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+	<div class="container">
+		<div class="footer-grid">
+			<div class="footer-about">
+				<a class="footer-logo" href="/">
+					<img src="/kw-logo-白色.svg" alt="" width="42" height="28" />
+					<span>{SITE.name} | {SITE.nameZh}</span>
+				</a>
+				<p class="footer-desc">用一个「为什么」探索世界——知其然,更要知其所以然。</p>
+			</div>
+
+			<nav class="footer-col" aria-label="内容线">
+				<h2>内容线</h2>
+				<ul>
+					<li><a href="/why/">WHY · 为什么</a></li>
+					<li><a href="/know/">Know · 你知道吗</a></li>
+					<li><a href="/news/">站点新闻</a></li>
+				</ul>
+			</nav>
+
+			<nav class="footer-col" aria-label="分类">
+				<h2>分类</h2>
+				<ul class="footer-categories">
+					{
+						CATEGORIES.map((category) => (
+							<li>
+								<a href={`/${category.slug}/`}>{category.name}</a>
+							</li>
+						))
+					}
+					<li>
+						<a href="/categories/">全部分类</a>
+					</li>
+				</ul>
+			</nav>
+
+			<nav class="footer-col" aria-label="关于">
+				<h2>关于</h2>
+				<ul>
+					<li><a href="/about/">关于本站</a></li>
+					<li><a href="/privacy/">隐私政策</a></li>
+					<li><a href="/terms/">使用条款</a></li>
+					<li><a href="/sources/">信息来源</a></li>
+					<li><a href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
+				</ul>
+			</nav>
+		</div>
+
+		<div class="footer-bottom">
+			<p>© {year} {SITE.name} | {SITE.nameZh} · 作者:{SITE.author}</p>
+			<p>由 {SITE.maintainer} 运行维护 · <a href={`mailto:${SITE.email}`}>联系邮箱</a></p>
+		</div>
+	</div>
+
+	{/* 装饰:吉祥物「小问」——绝对定位站在右下角侧边空白区,不参与布局(见样式注释) */}
+	<img class="footer-mascot" src="/mascot/Mascot-Thumbs-Up.png" alt="" aria-hidden="true" />
+</footer>
+
+<style>
+	/* 深色页脚:与顶部浅色导航形成首尾呼应 */
+	.site-footer {
+		position: relative;
+		overflow: hidden;
+		background: var(--ink-deep);
+		color: #94a3b8;
+	}
+
+	.footer-grid {
+		display: grid;
+		grid-template-columns: 1.5fr 1fr 1.2fr 1fr;
+		gap: 2rem 2.5rem;
+		padding-block: 2.75rem 2.25rem;
+	}
+
+	.footer-logo {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6rem;
+		font-size: 1.15rem;
+		font-weight: 700;
+		color: #f1f5f9;
+	}
+
+	.footer-logo img {
+		height: 28px;
+		width: auto;
+	}
+
+	.footer-desc {
+		max-width: 34ch;
+		margin-top: 0.8rem;
+		font-size: 0.88rem;
+		line-height: 1.7;
+		color: #94a3b8;
+	}
+
+	.footer-col h2 {
+		margin-bottom: 0.85rem;
+		font-size: 0.82rem;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		color: #e2e8f0;
+	}
+
+	.footer-col ul {
+		display: grid;
+		gap: 0.5rem;
+		padding: 0;
+		list-style: none;
+	}
+
+	/* 分类列:两列排布 */
+	.footer-col ul.footer-categories {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 0.5rem 1rem;
+	}
+
+	.footer-col a {
+		font-size: 0.92rem;
+		color: #94a3b8;
+		transition: color 150ms ease;
+	}
+
+	.footer-col a:hover {
+		color: var(--amber);
+	}
+
+	.footer-bottom {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: 0.5rem 1.5rem;
+		padding-block: 1.25rem;
+		border-top: 1px solid rgb(148 163 184 / 18%);
+		font-size: 0.82rem;
+		color: #64748b;
+	}
+
+	.footer-bottom a {
+		color: #94a3b8;
+		transition: color 150ms ease;
+	}
+
+	.footer-bottom a:hover {
+		color: var(--amber);
+	}
+
+	@media (max-width: 960px) {
+		.footer-grid {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	/* 装饰吉祥物:绝对定位站在页脚右下角(内容容器外的侧边空白),不参与布局;
+	   窄屏无侧边空白时隐藏,避免遮挡内容 */
+	.footer-mascot {
+		display: none;
+		position: absolute;
+		left: calc(50% + 33.75rem + 1rem);
+		bottom: 0;
+		height: clamp(110px, 9vw, 150px);
+		width: auto;
+		pointer-events: none;
+		user-select: none;
+	}
+
+	@media (min-width: 1360px) {
+		.footer-mascot {
+			display: block;
+		}
+	}
+
+	@media (max-width: 560px) {
+		.footer-grid {
+			grid-template-columns: 1fr;
+			gap: 1.75rem;
+		}
+
+		.footer-col ul.footer-categories {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+</style>

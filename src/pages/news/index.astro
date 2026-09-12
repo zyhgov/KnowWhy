@@ -1,0 +1,161 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EntriesToolbar from '../../components/EntriesToolbar.astro';
+import AuthorInline from '../../components/AuthorInline.astro';
+import { formatAuthorNames } from '../../consts';
+import { formatDate, getNewsHref } from '../../utils';
+
+// 站点新闻列表:全部已发布,按日期倒序;同日按文件名倒序兜底,保证顺序稳定
+const entries = (await getCollection('news', ({ data }) => data.status === 'published')).sort(
+	(a, b) => b.data.date.valueOf() - a.data.date.valueOf() || b.id.localeCompare(a.id),
+);
+---
+
+<BaseLayout
+	title="站点新闻"
+	description="KnowWhy 站点新闻:记录网站的建设进展、功能上线与内容更新动态。"
+>
+	<nav class="crumbs" aria-label="面包屑">
+		<ol>
+			<li><a href="/">首页</a></li>
+			<li aria-current="page">站点新闻</li>
+		</ol>
+	</nav>
+
+	<header class="page-head">
+		<h1>站点新闻</h1>
+		<p>记录 KnowWhy 的建设进展:功能上线、内容更新与站点动态。</p>
+	</header>
+
+	{
+		entries.length > 0 ? (
+			<div class="entries-browser" data-per-page="10" data-default-view="list">
+				<EntriesToolbar total={entries.length} />
+				<div class="entries-table-wrap" data-view-panel="list">
+					<table class="entries-table">
+						<thead>
+							<tr>
+								<th>日期</th>
+								<th>标题</th>
+								<th>摘要</th>
+								<th>作者</th>
+							</tr>
+						</thead>
+						<tbody>
+							{entries.map((entry) => (
+								<tr data-entry>
+									<td>{formatDate(entry.data.date)}</td>
+									<td>
+										<a href={getNewsHref(entry)}>{entry.data.title}</a>
+									</td>
+									<td>{entry.data.summary ?? '—'}</td>
+									<td>{formatAuthorNames(entry.data.authors)}</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+				<ol class="news-list" data-view-panel="card" hidden>
+					{entries.map((entry) => (
+						<li data-entry>
+							<a class="news-item" href={getNewsHref(entry)}>
+								<div class="news-item-top">
+									<time datetime={entry.data.date.toISOString()}>
+										{formatDate(entry.data.date)}
+									</time>
+									<AuthorInline authors={entry.data.authors} showNames={false} />
+								</div>
+								<h2>{entry.data.title}</h2>
+								{entry.data.summary && <p>{entry.data.summary}</p>}
+							</a>
+						</li>
+					))}
+				</ol>
+				<nav class="entries-pager" data-pager aria-label="分页" hidden></nav>
+			</div>
+		) : (
+			<div class="empty">
+				<p>暂无新闻——站点有新的进展时,会第一时间在这里发布。</p>
+			</div>
+		)
+	}
+</BaseLayout>
+
+<script>
+	import '../../scripts/entries-browser';
+</script>
+
+<style>
+	.page-head {
+		margin-block: 1.25rem 2rem;
+	}
+
+	.page-head h1 {
+		font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+	}
+
+	.page-head p {
+		max-width: 56ch;
+		margin-top: 0.5rem;
+		color: var(--text-muted);
+	}
+
+	.news-list {
+		display: grid;
+		gap: 1rem;
+		padding: 0;
+		list-style: none;
+	}
+
+	.news-item {
+		display: block;
+		padding: 1.35rem 1.5rem;
+		background: var(--paper);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-md);
+		box-shadow: var(--shadow-card);
+		transition:
+			transform 160ms ease,
+			box-shadow 160ms ease,
+			border-color 160ms ease;
+	}
+
+	.news-item:hover {
+		transform: translateY(-2px);
+		border-color: var(--amber);
+		box-shadow: var(--shadow-card-hover);
+	}
+
+	.news-item-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.news-item time {
+		font-size: 0.8rem;
+		color: var(--text-muted);
+	}
+
+	.news-item h2 {
+		margin-top: 0.35rem;
+		font-size: 1.2rem;
+	}
+
+	.news-item p {
+		margin-top: 0.5rem;
+		font-size: 0.95rem;
+		color: var(--text-muted);
+	}
+
+	.empty {
+		padding: 3rem 1.5rem;
+		text-align: center;
+		color: var(--text-muted);
+		border: 1px dashed var(--line);
+		border-radius: var(--radius-md);
+		background: var(--paper);
+	}
+</style>

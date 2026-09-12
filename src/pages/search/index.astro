@@ -1,0 +1,114 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { CATEGORIES } from '../../consts';
+
+// 站内搜索:客户端拉取 /search-index.json 实时过滤(逻辑在 src/scripts/site-search.ts)
+---
+
+<BaseLayout
+	title="搜索"
+	description="搜索 KnowWhy 站内的「WHY 为什么」「Know 你知道吗」与站点新闻内容。"
+>
+	<nav class="crumbs" aria-label="面包屑">
+		<ol>
+			<li><a href="/">首页</a></li>
+			<li aria-current="page">搜索</li>
+		</ol>
+	</nav>
+
+	<header class="page-head">
+		<h1>搜索</h1>
+		<p>一站搜遍「WHY 为什么」「Know 你知道吗」与站点新闻。</p>
+	</header>
+
+	<div class="search-box">
+		<input
+			id="site-search-input"
+			type="search"
+			placeholder="输入关键词,如:微波炉 / 舷窗 / 分页"
+			aria-label="搜索关键词"
+			autocomplete="off"
+		/>
+		<!-- 高级筛选:与关键词为「与」关系;下拉为自定义组件(非原生 select 面板),年份选项由脚本按索引数据填充 -->
+		<div class="search-filters">
+			<div class="search-filter">
+				<span class="search-filter-name">内容线</span>
+				<div class="filter-select" data-filter-type data-value="all">
+					<button type="button" class="filter-select-trigger" aria-haspopup="listbox" aria-expanded="false">
+						<span class="filter-select-label">全部</span>
+						<!-- 下拉箭头:矢量数据取自 reicon-react 包 AngleDown -->
+						<svg class="filter-select-caret" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+							<path d="M6.46967 9.46967C6.76256 9.17678 7.23744 9.17678 7.53033 9.46967L12 13.9393L16.4697 9.46967C16.7626 9.17678 17.2374 9.17678 17.5303 9.46967C17.8232 9.76256 17.8232 10.2374 17.5303 10.5303L12.5303 15.5303C12.2374 15.8232 11.7626 15.8232 11.4697 15.5303L6.46967 10.5303C6.17678 10.2374 6.17678 9.76256 6.46967 9.46967Z" fill="currentColor"></path>
+						</svg>
+					</button>
+					<ul class="filter-select-options" role="listbox" aria-label="按内容线筛选" hidden>
+						<li role="option" data-value="all" aria-selected="true" tabindex="-1">全部</li>
+						<li role="option" data-value="why" aria-selected="false" tabindex="-1">WHY</li>
+						<li role="option" data-value="know" aria-selected="false" tabindex="-1">Know</li>
+						<li role="option" data-value="news" aria-selected="false" tabindex="-1">新闻</li>
+					</ul>
+				</div>
+			</div>
+			<div class="search-filter">
+				<span class="search-filter-name">分类</span>
+				<div class="filter-select" data-filter-category data-value="all">
+					<button type="button" class="filter-select-trigger" aria-haspopup="listbox" aria-expanded="false">
+						<span class="filter-select-label">全部分类</span>
+						<svg class="filter-select-caret" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+							<path d="M6.46967 9.46967C6.76256 9.17678 7.23744 9.17678 7.53033 9.46967L12 13.9393L16.4697 9.46967C16.7626 9.17678 17.2374 9.17678 17.5303 9.46967C17.8232 9.76256 17.8232 10.2374 17.5303 10.5303L12.5303 15.5303C12.2374 15.8232 11.7626 15.8232 11.4697 15.5303L6.46967 10.5303C6.17678 10.2374 6.17678 9.76256 6.46967 9.46967Z" fill="currentColor"></path>
+						</svg>
+					</button>
+					<ul class="filter-select-options" role="listbox" aria-label="按分类筛选" hidden>
+						<li role="option" data-value="all" aria-selected="true" tabindex="-1">全部分类</li>
+						{CATEGORIES.map((category) => (
+							<li role="option" data-value={category.name} aria-selected="false" tabindex="-1">
+								{category.name}
+							</li>
+						))}
+					</ul>
+				</div>
+			</div>
+			<div class="search-filter">
+				<span class="search-filter-name">年份</span>
+				<div class="filter-select" data-filter-year data-value="all">
+					<button type="button" class="filter-select-trigger" aria-haspopup="listbox" aria-expanded="false">
+						<span class="filter-select-label">全部年份</span>
+						<svg class="filter-select-caret" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+							<path d="M6.46967 9.46967C6.76256 9.17678 7.23744 9.17678 7.53033 9.46967L12 13.9393L16.4697 9.46967C16.7626 9.17678 17.2374 9.17678 17.5303 9.46967C17.8232 9.76256 17.8232 10.2374 17.5303 10.5303L12.5303 15.5303C12.2374 15.8232 11.7626 15.8232 11.4697 15.5303L6.46967 10.5303C6.17678 10.2374 6.17678 9.76256 6.46967 9.46967Z" fill="currentColor"></path>
+						</svg>
+					</button>
+					<ul class="filter-select-options" role="listbox" aria-label="按年份筛选" hidden>
+						<li role="option" data-value="all" aria-selected="true" tabindex="-1">全部年份</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<p class="search-status" data-search-status role="status">输入关键词开始搜索。</p>
+	<ul class="search-results" data-search-results hidden></ul>
+
+	<noscript>
+		<p class="search-status">搜索需要启用 JavaScript,请在浏览器设置中开启后刷新重试。</p>
+	</noscript>
+</BaseLayout>
+
+<script>
+	import '../../scripts/site-search';
+</script>
+
+<style>
+	.page-head {
+		margin-block: 1.25rem 2rem;
+	}
+
+	.page-head h1 {
+		font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+	}
+
+	.page-head p {
+		max-width: 56ch;
+		margin-top: 0.5rem;
+		color: var(--text-muted);
+	}
+</style>

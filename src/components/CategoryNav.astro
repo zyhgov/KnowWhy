@@ -1,0 +1,86 @@
+---
+import { CATEGORIES } from '../consts';
+import CategoryIcon from './react/CategoryIcon.tsx';
+---
+
+<section class="category-nav" aria-label="分类导航">
+	{
+		CATEGORIES.map((category) => (
+			<a
+				class="category-card"
+				href={`/${category.slug}/`}
+				style={`--tone: ${category.tone.deep}; --tone-soft: ${category.tone.soft};`}
+			>
+				<span class="category-icon">
+					<CategoryIcon category={category.slug} size={22} />
+				</span>
+				<span class="category-name">{category.name}</span>
+				<span class="category-desc">{category.description}</span>
+			</a>
+		))
+	}
+</section>
+
+<style>
+	.category-nav {
+		display: grid;
+		grid-template-columns: repeat(6, 1fr);
+		gap: 0.85rem;
+	}
+
+	/* 与分类页同源:按分类主题着色(--tone / --tone-soft 由行内样式注入),图标居右上角 */
+	.category-card {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		padding: 1.15rem 1.05rem;
+		background: var(--tone-soft);
+		border: 1px solid color-mix(in srgb, var(--tone) 22%, transparent);
+		border-radius: var(--radius-md);
+		transition:
+			transform 150ms ease,
+			border-color 150ms ease,
+			box-shadow 150ms ease;
+	}
+
+	.category-card:hover {
+		transform: translateY(-2px);
+		border-color: var(--tone);
+		box-shadow: var(--shadow-card);
+	}
+
+	.category-icon {
+		position: absolute;
+		top: 0.95rem;
+		right: 0.95rem;
+		display: inline-flex;
+		color: var(--tone);
+	}
+
+	.category-name {
+		font-size: 1.08rem;
+		font-weight: 700;
+		color: var(--ink-deep);
+		/* 给右上角图标留出空间 */
+		padding-right: 1.9rem;
+	}
+
+	.category-desc {
+		font-size: 0.82rem;
+		line-height: 1.6;
+		color: var(--text);
+	}
+
+	@media (max-width: 960px) {
+		.category-nav {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	@media (max-width: 560px) {
+		.category-nav {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+</style>

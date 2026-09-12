@@ -1,0 +1,65 @@
+---
+import { getAuthor } from '../consts';
+
+/*
+ * 作者内联显示:用于卡片底部、表格等紧凑位置。
+ * showNames=false 时仅显示头像(多作者并排多个头像,悬停 title 提示名字),
+ * 适合卡片等空间紧凑、名字较长会撑破布局的位置。
+ */
+interface Props {
+	/** 作者 key 数组(在 consts.AUTHORS 注册) */
+	authors: string[];
+	/** 是否显示头像 */
+	showAvatar?: boolean;
+	/** 是否显示作者名(默认显示;false 时仅头像,名字放入 title 提示) */
+	showNames?: boolean;
+}
+
+const { authors, showAvatar = true, showNames = true } = Astro.props;
+const authorList = authors.map((key) => getAuthor(key)).filter((author) => author !== undefined);
+---
+
+{
+	authorList.length > 0 && (
+		<span class="author-inline" title={authorList.map((author) => author.name).join('、')}>
+			{showAvatar &&
+				authorList.map((author) => (
+					<img
+						class="author-inline-avatar"
+						src={author.avatar}
+						alt=""
+						width="20"
+						height="20"
+						loading="lazy"
+					/>
+				))}
+			{showNames && (
+				<span class="author-inline-names">{authorList.map((author) => author.name).join('、')}</span>
+			)}
+		</span>
+	)
+}
+
+<style>
+	.author-inline {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.78rem;
+		color: var(--text-muted);
+	}
+
+	.author-inline-avatar {
+		width: 20px;
+		height: 20px;
+		border-radius: 999px;
+		object-fit: cover;
+		/* 白色描边圈:多头像叠靠时彼此分明 */
+		box-shadow: 0 0 0 1.5px var(--paper);
+	}
+
+	/* 多作者头像轻微叠靠,紧凑不散 */
+	.author-inline-avatar + .author-inline-avatar {
+		margin-left: -0.35rem;
+	}
+</style>

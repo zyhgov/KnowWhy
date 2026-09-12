@@ -1,0 +1,91 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+	title="页面不存在"
+	description="这个地址不存在 —— KnowWhy|知其所以然,用一个「为什么」探索世界。"
+>
+	<section class="not-found">
+		<img class="nf-mascot" src="/mascot/Mascot-Thinking.png" alt="小问托腮思考" />
+		<p class="nf-code">404</p>
+		<h1>这个页面不存在</h1>
+		<p class="nf-desc">
+			地址可能被挪走、改名,或者从来就没有过。<br />让小问陪你从首页重新出发。
+		</p>
+		<div class="nf-actions">
+			<a class="nf-btn nf-btn-primary" href="/">回到首页</a>
+			<a class="nf-btn" href="/why/">逛逛 WHY</a>
+		</div>
+	</section>
+</BaseLayout>
+
+<style>
+	.not-found {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding-block: 3.5rem 2rem;
+		text-align: center;
+	}
+
+	.nf-mascot {
+		width: min(58vw, 240px);
+		height: auto;
+	}
+
+	.nf-code {
+		margin-top: 0.5rem;
+		font-size: 0.85rem;
+		font-weight: 700;
+		letter-spacing: 0.22em;
+		color: var(--amber-deep);
+	}
+
+	.not-found h1 {
+		margin-top: 0.4rem;
+		font-size: clamp(1.6rem, 4vw, 2.2rem);
+	}
+
+	.nf-desc {
+		margin-top: 0.9rem;
+		color: var(--text-muted);
+	}
+
+	.nf-actions {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.75rem;
+		margin-top: 1.6rem;
+	}
+
+	.nf-btn {
+		padding: 0.55rem 1.5rem;
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		font-size: 0.95rem;
+		color: var(--ink);
+		transition:
+			border-color 150ms ease,
+			color 150ms ease;
+	}
+
+	.nf-btn:hover {
+		border-color: var(--amber);
+		color: var(--amber-deep);
+	}
+
+	.nf-btn-primary {
+		border-color: transparent;
+		background: var(--amber);
+		color: var(--ink-deep);
+		font-weight: 700;
+	}
+
+	.nf-btn-primary:hover {
+		border-color: transparent;
+		background: #fbbf24;
+		color: var(--ink-deep);
+	}
+</style>

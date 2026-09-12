@@ -1,0 +1,64 @@
+
+---
+id: "WHY.0007"
+title: "为什么手机电池充到 80% 之后，充电速度会明显变慢？"
+slug: "why-phone-battery-charging-slows-down-at-80-percent"
+authors: ["zyhorg"]
+category: "tech"
+tags: ["锂离子电池", "涓流充电", "恒流恒压", "电池管理系统", "锂枝晶"]
+date: 2026-09-12
+status: "published"
+sources:
+  - name: "Nature Communications - Onboard early detection and mitigation of lithium plating"
+    url: "https://www.nature.com/articles/s41467-022-33486-4"
+  - name: "ScienceDirect - Lithium Plating Mechanism, Detection, and Mitigation"
+    url: "https://www.sciencedirect.com/science/article/abs/pii/S0360128521000514"
+  - name: "Binghamton University - Development and Implementation of a Battery Cycler"
+    url: "https://ziang.binghamton.edu/battery-cycler/"
+  - name: "ScienceDirect - Perspective on fast-charging lithium-ion batteries"
+    url: "https://www.sciencedirect.com/science/article/pii/S2405829725004763"
+  - name: "IEEE Xplore - A Comparative Review of Age-Aware Fast Charging Techniques"
+    url: "https://ieeexplore.ieee.org/iel8/6287639/10820123/11202919.pdf"
+  - name: "Atlantis University - How to Charge Lithium Ion Batteries Safely"
+    url: "https://bigblue.atlantisuniversity.edu/how-to-charge-lithium-ion/"
+ogImage: ""
+related: []
+---
+
+
+手机电池充到 80% 后速度断崖式变慢，是因为锂离子电池的物理化学特性决定了它必须从“恒流快充”切换到“恒压涓流”模式。这是电池管理系统（BMS）为了防止高电压下产生致命的“锂枝晶”刺穿电池内部，而主动踩下的一脚保命刹车。
+
+## 充电的“两段式”法则：从狂奔到散步
+
+要理解充电变慢的原因，首先要明白现代锂离子电池通用的 CC-CV（恒流-恒压）充电协议。
+
+### 0% 到 80%：恒流阶段（Constant Current）
+当手机电量较低时，电池内部的电压也较低。此时，电源管理芯片会以最大且恒定的电流向电池注入能量，同时电池两端的电压会随着电量的增加而逐渐攀升。我们平时宣传的“百瓦快充”、“半小时充满”，其魔法几乎全部发生在这个阶段。此时电池就像一块干海绵，能够贪婪且快速地吸收水分。
+
+### 80% 到 100%：恒压阶段（Constant Voltage）
+当电池电压达到其设计的安全上限（通常在 4.3V 到 4.5V 之间）时，恒流阶段必须强制结束。为了防止电压继续升高导致电池过充爆炸，充电器会锁定最高电压，转而让输入电流呈指数级衰减。这个电流越来越小、犹如“滴灌”般的阶段，就是俗称的“涓流充电”。
+
+| 充电阶段 | 电量区间 | 电压状态 | 电流状态 | 充电速度体验 |
+| :--- | :--- | :--- | :--- | :--- |
+| **恒流阶段 (CC)** | 0% - 80% | 逐渐上升至上限 | 保持最大恒定值 | 极快（快充发力区） |
+| **恒压阶段 (CV)** | 80% - 100% | 锁定在最高上限 | 呈指数级不断衰减 | 极慢（涓流滴灌区） |
+
+## 微观世界的“抢座游戏”与致命危机
+
+为什么到了 80% 就不能继续用大电流猛充了？这得从电池内部的微观结构说起。
+
+### 负极的“座位”危机
+锂离子电池充放电的本质，是锂离子在正极和负极（通常是石墨层）之间的来回嵌入与脱出。你可以把负极的石墨层想象成一个巨大的立体停车场。在 0% 到 80% 的阶段，停车场空位很多，锂离子可以迅速驶入停好。但当电量超过 80% 时，负极的“车位”已经所剩无几。
+
+### 析锂现象与致命的“锂枝晶”
+如果此时依然用大电流强行把锂离子往负极塞，那些来不及找到车位嵌入石墨层间的锂离子，就会在负极表面直接获得电子，还原成金属锂。这种现象在电化学中被称为“析锂”（Lithium plating）。
+
+> “析锂不仅会导致电池容量发生不可逆的衰减，更严重的是，沉积的金属锂会逐渐生长成树枝状的晶体（锂枝晶）。”
+
+这些微观下的“锂枝晶”就像一根根尖锐的钢针。随着充电的继续，枝晶会不断变长，最终极有可能刺穿正负极之间极薄的绝缘隔膜，导致电池内部直接短路，引发热失控、剧烈燃烧甚至爆炸。因此，BMS（电池管理系统）必须在 80% 左右主动降低电流，给锂离子留出足够的时间，让它们排队、缓慢地挤进石墨层深处。
+
+## 满电状态下的“化学内耗”
+
+除了物理上的枝晶风险，高电量本身对电池也是一种“折磨”。当电池处于接近 100% 的高电压状态时，电池内部的电解液和电极材料处于极高的化学势能状态。这会加速电解液的氧化分解以及固体电解质界面膜（SEI膜）的增厚，导致电池内阻变大，宏观表现就是电池“老化”、最大容量永久缩减。
+
+弄明白了这个机制，你就能看懂手机系统里那个经常被忽略的“优化电池充电”功能了。当你开启这个功能后，手机会学习你的作息：在夜间充电时，它会故意在 80% 处踩下刹车并暂停充电，直到你起床前的一两个小时，才用极小的涓流把剩下的 20% 缓慢填满。这并非手机出了故障，而是系统在利用算法帮你“避开”高电压状态下的化学内耗，从而尽可能延长这块锂电池的整体寿命。
