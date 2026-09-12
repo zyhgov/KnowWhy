@@ -79,6 +79,19 @@ const ogImageURL = new URL(ogImage ?? '/kw-og.png', SITE.url);
 			首页通过 <Fragment slot="head"> 注入 FAQPage,文章页注入 Article(JSON-LD)。
 		*/}
 		<slot name="head" />
+		<!-- Microsoft Clarity 行为分析(全站,项目 ID:yh39o7mjvy) -->
+		<script is:inline>
+			(function(c,l,a,r,i,t,y){
+				c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+				t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i+"?ref=bwt";
+				y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+			})(window, document, "clarity", "script", "yh39o7mjvy");
+		</script>
+		<!-- 51.LA 网站统计(同步引入,id: LJhpuVmQONPz46Gl) -->
+		<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js" is:inline></script>
+		<script is:inline>
+			LA.init({id:"LJhpuVmQONPz46Gl",ck:"LJhpuVmQONPz46Gl",autoTrack:true,hashMode:true})
+		</script>
 	</head>
 	<body>
 		<Header />
