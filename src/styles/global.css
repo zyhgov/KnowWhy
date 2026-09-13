@@ -297,11 +297,17 @@ html[data-font-size='large'] {
 	--reading-size: 1.34rem;
 }
 
+/* 文章页正文:随 .article 容器(860px)全宽排布,与标题/参考资料对齐(此前 72ch 限宽比容器窄,右侧留白) */
 .prose {
-	max-width: 72ch;
 	font-size: var(--reading-size);
 	/* 文章正文:字间距略大于全局,长文阅读更从容 */
 	letter-spacing: 0.02em;
+}
+
+/* 静态页(关于/隐私/条款)正文块:限宽 72ch 并居中,避免靠左留白(静态页容器 1080px 较宽,需限宽保证阅读行长) */
+.prose.is-page {
+	max-width: 72ch;
+	margin-inline: auto;
 }
 
 .prose > :first-child {
@@ -694,6 +700,31 @@ html[data-font-size='large'] {
 	color: var(--text-muted);
 }
 
+/* 小屏:筛选项各占一行,下拉撑满整行便于点按 */
+@media (max-width: 640px) {
+	.search-filters {
+		gap: 0.55rem;
+	}
+
+	.search-filter {
+		flex: 1 1 100%;
+	}
+
+	.filter-select {
+		flex: 1;
+	}
+
+	/* 带前缀提高特异性:基础规则(定义在本块之后)含 min-width,需在小屏仍被本块覆盖 */
+	.search-filters .filter-select-trigger {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.filter-select-options {
+		width: 100%;
+	}
+}
+
 /* ---------- 自定义筛选下拉(替代原生 select 面板) ---------- */
 .filter-select {
 	position: relative;
@@ -894,4 +925,167 @@ html[data-font-size='large'] {
 	margin-top: 0.35rem;
 	font-size: 0.9rem;
 	color: var(--text-muted);
+}
+
+/* ---------- 标签页(/tags/) ---------- */
+/* 标签云芯片与分组卡片由 tag-browser.ts 在搜索/翻页后重建,样式必须放此全局文件 */
+.tag-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.28rem 0.75rem;
+	font-size: 0.88rem;
+	font-weight: 600;
+	color: var(--ink);
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	transition:
+		color 150ms ease,
+		border-color 150ms ease;
+}
+
+.tag-chip:hover {
+	color: var(--amber-deep);
+	border-color: var(--amber);
+}
+
+.tag-chip-count {
+	font-size: 0.72rem;
+	font-weight: 600;
+	color: var(--text-muted);
+}
+
+.tag-group {
+	padding: 1.15rem 1.35rem;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-card);
+	scroll-margin-top: calc(var(--header-h, 64px) + 1.5rem);
+}
+
+.tag-group-title {
+	display: flex;
+	align-items: center;
+	gap: 0.55rem;
+	font-size: 1.02rem;
+}
+
+.tag-group-count {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--text-muted);
+	padding: 0.1rem 0.55rem;
+	border-radius: 999px;
+	background: var(--mist);
+	border: 1px solid var(--line);
+}
+
+.tag-links {
+	display: grid;
+	gap: 0.4rem;
+	margin-top: 0.7rem;
+	padding: 0;
+	list-style: none;
+}
+
+.tag-links a {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	font-size: 0.92rem;
+	color: var(--ink);
+}
+
+.tag-links a:hover {
+	color: var(--amber-deep);
+}
+
+.tag-serial {
+	flex-shrink: 0;
+	font-family: var(--font-mono);
+	font-size: 0.72rem;
+	font-weight: 600;
+	padding: 0.12rem 0.55rem;
+	border-radius: 999px;
+}
+
+.tag-serial.is-why {
+	color: var(--amber-deep);
+	background: var(--amber-soft);
+}
+
+.tag-serial.is-know {
+	color: var(--blue-deep);
+	background: var(--blue-soft);
+}
+
+.tag-serial.is-news {
+	color: var(--ink);
+	background: var(--line);
+}
+
+/* ---------- 信息来源页(/sources/) ---------- */
+/* 来源分组卡片由 source-browser.ts 在翻页后重建,样式必须放此全局文件 */
+.source-group {
+	padding: 1.15rem 1.35rem;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-card);
+}
+
+.source-title {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	font-size: 1.02rem;
+}
+
+.source-serial {
+	flex-shrink: 0;
+	font-family: var(--font-mono);
+	font-size: 0.72rem;
+	font-weight: 600;
+	padding: 0.12rem 0.55rem;
+	border-radius: 999px;
+}
+
+.source-serial.is-why {
+	color: var(--amber-deep);
+	background: var(--amber-soft);
+}
+
+.source-serial.is-know {
+	color: var(--blue-deep);
+	background: var(--blue-soft);
+}
+
+.source-title a {
+	color: var(--ink-deep);
+}
+
+.source-title a:hover {
+	color: var(--blue);
+}
+
+.source-links {
+	display: grid;
+	gap: 0.35rem;
+	margin-top: 0.7rem;
+	padding-left: 1.1rem;
+	font-size: 0.88rem;
+	line-height: 1.65;
+}
+
+.source-links a {
+	color: var(--text-muted);
+	text-decoration: underline;
+	text-decoration-color: color-mix(in srgb, var(--text-muted) 40%, transparent);
+	text-underline-offset: 2px;
+}
+
+.source-links a:hover {
+	color: var(--blue-deep);
 }

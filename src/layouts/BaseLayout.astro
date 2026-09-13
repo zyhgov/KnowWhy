@@ -18,14 +18,34 @@ interface Props {
 	ogType?: 'website' | 'article';
 	/** 页面自定义 og:image(public 下绝对路径);缺省用站点默认图 */
 	ogImage?: string;
+	/** og:article 系列(仅 ogType='article' 时输出):发布日期(ISO)/作者显示名/板块/标签 */
+	article?: {
+		publishedTime: string;
+		authors?: string[];
+		section?: string;
+		tags?: string[];
+	};
+	/** 页面作者显示名(输出 meta author) */
+	author?: string;
+	/** 禁止搜索引擎索引(404 / 站内搜索等) */
+	noindex?: boolean;
 }
 
-const { title, description = SITE.description, ogType = 'website', ogImage } = Astro.props;
+const {
+	title,
+	description = SITE.description,
+	ogType = 'website',
+	ogImage,
+	article,
+	author,
+	noindex = false,
+} = Astro.props;
 
 const siteName = `${SITE.name}|${SITE.nameZh}`;
 const fullTitle = title ? `${title} | ${siteName}` : `${siteName} — ${SITE.tagline}`;
 const canonicalURL = new URL(Astro.url.pathname, SITE.url);
-const ogImageURL = new URL(ogImage ?? '/kw-og.png', SITE.url);
+// 未设置或空字符串一律回退默认图(?? 只拦 null/undefined,而 new URL('', SITE.url) 会解析成站点根)
+const ogImageURL = new URL(ogImage?.trim() || '/kw-og-images.jpg', SITE.url);
 ---
 
 <!doctype html>
@@ -52,11 +72,19 @@ const ogImageURL = new URL(ogImage ?? '/kw-og.png', SITE.url);
 		<meta name="msapplication-TileColor" content="#ffffff" />
 		<meta name="msapplication-TileImage" content="/icon/ms-icon-144x144.png" />
 		<meta name="theme-color" content="#ffffff" />
-		<!-- astro-seo:基础 meta(title / description / canonical / openGraph) -->
+		<!-- astro-seo:基础 meta(title / description / canonical / robots)+ openGraph + twitter → 卡片 -->
 		<SEO
 			title={fullTitle}
 			description={description}
 			canonical={canonicalURL}
+			noindex={noindex}
+			twitter={{
+				card: 'summary_large_image',
+				title: fullTitle,
+				description,
+				image: ogImageURL.href,
+				imageAlt: siteName,
+			}}
 			openGraph={{
 				basic: {
 					title: fullTitle,
@@ -67,12 +95,14 @@ const ogImageURL = new URL(ogImage ?? '/kw-og.png', SITE.url);
 				image: {
 					alt: siteName,
 				},
+				article,
 				optional: {
 					locale: 'zh_CN',
 					siteName,
 					description,
 				},
 			}}
+			extend={author ? { meta: [{ name: 'author', content: author }] } : undefined}
 		/>
 		{/*
 			SEO 预留:Schema.org 结构化数据注入位。

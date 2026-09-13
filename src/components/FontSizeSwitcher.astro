@@ -15,7 +15,9 @@
 <script>
 	const STORAGE_KEY = 'knowwhy:font-size';
 	const root = document.documentElement;
-	const buttons = Array.from(document.querySelectorAll('.font-switcher button[data-size]'));
+	const buttons = Array.from(
+		document.querySelectorAll<HTMLButtonElement>('.font-switcher button[data-size]'),
+	);
 
 	const readStored = () => {
 		try {
@@ -25,7 +27,7 @@
 		}
 	};
 
-	const apply = (size) => {
+	const apply = (size: string) => {
 		if (size === 'small' || size === 'large') {
 			root.dataset.fontSize = size;
 		} else {
@@ -85,5 +87,13 @@
 	.font-switcher button[aria-pressed='true'] {
 		background: var(--ink);
 		color: #fff;
+	}
+
+	/* 小屏:收窄按钮,避免挤占文章元信息行 */
+	@media (max-width: 640px) {
+		.font-switcher button {
+			padding: 0.18rem 0.5rem;
+			font-size: 0.72rem;
+		}
 	}
 </style>

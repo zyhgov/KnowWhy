@@ -1,0 +1,96 @@
+---
+import { SITE, getAuthor } from '../consts';
+
+/*
+ * 文章页结构化数据(Schema.org JSON-LD):
+ * - Article:标题/描述/发布日期/作者/发布者/配图/板块/关键词,供搜索引擎与聚合平台解析
+ * - BreadcrumbList:与页面面包屑一致,帮助搜索结果展示层级路径
+ * 通过各文章页的 <Fragment slot="head"> 注入 BaseLayout 的 head。
+ */
+
+interface Crumb {
+	name: string;
+	/** 末项(当前页)可省略 */
+	url?: string;
+}
+
+interface Props {
+	title: string;
+	description: string;
+	/** 发布日期的 ISO 字符串(如 2026-09-12T00:00:00.000Z) */
+	datePublished: string;
+	/** 作者 key 数组(在 consts.AUTHORS 注册) */
+	authors?: string[];
+	/** 文章所属板块名(如「科技」「站点新闻」),写入 articleSection */
+	section?: string;
+	/** 关键词(文章标签) */
+	keywords?: string[];
+	/** OG 图(public 下绝对路径,缺省用站点默认图) */
+	ogImage?: string;
+	/** 面包屑(首页 → 板块 → [分类] → 当前页) */
+	crumbs: Crumb[];
+}
+
+const {
+	title,
+	description,
+	datePublished,
+	authors = [],
+	section,
+	keywords = [],
+	ogImage,
+	crumbs,
+} = Astro.props;
+
+const canonicalUrl = new URL(Astro.url.pathname, SITE.url).href;
+const imageUrl = new URL(ogImage?.trim() || '/kw-og-images.jpg', SITE.url).href;
+const publisherLogo = new URL('/icon/android-icon-192x192.png', SITE.url).href;
+
+const authorList = authors
+	.map((key) => getAuthor(key))
+	.filter((author) => author !== undefined)
+	.map((author) => ({
+		'@type': 'Person',
+		name: author.name,
+		...(author.url ? { url: author.url } : {}),
+	}));
+
+const articleLd = {
+	'@context': 'https://schema.org',
+	'@type': 'Article',
+	headline: title,
+	description,
+	inLanguage: 'zh-CN',
+	datePublished,
+	dateModified: datePublished,
+	author: authorList,
+	publisher: {
+		'@type': 'Organization',
+		name: `${SITE.name}|${SITE.nameZh}`,
+		logo: {
+			'@type': 'ImageObject',
+			url: publisherLogo,
+		},
+	},
+	mainEntityOfPage: canonicalUrl,
+	image: imageUrl,
+	...(section ? { articleSection: section } : {}),
+	...(keywords.length > 0 ? { keywords: keywords.join(', ') } : {}),
+};
+
+const breadcrumbLd = {
+	'@context': 'https://schema.org',
+	'@type': 'BreadcrumbList',
+	itemListElement: crumbs.map((crumb, index) => ({
+		'@type': 'ListItem',
+		position: index + 1,
+		name: crumb.name,
+		...(crumb.url ? { item: new URL(crumb.url, SITE.url).href } : {}),
+	})),
+};
+
+// 转义 < 防止内容截断 script 标签
+const jsonLd = JSON.stringify([articleLd, breadcrumbLd]).replace(/</g, '\\u003c');
+---
+
+<script type="application/ld+json" is:inline set:html={jsonLd} />

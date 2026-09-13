@@ -51,6 +51,20 @@ function initDiscover(items: DiscoverItem[]): void {
 		randomIndex = next;
 		swapCard('random', items[next]);
 	});
+
+	// ---- 整卡点击跳转:点卡片任意位置直达条目(点链接/按钮、拖选文字时除外) ----
+	for (const prefix of ['daily', 'random'] as const) {
+		const card = document.getElementById(`${prefix}-card`);
+		card?.addEventListener('click', (event) => {
+			const target = event.target;
+			// 「阅读全文」链接与「换一条」按钮保留各自行为
+			if (target instanceof Element && target.closest('a, button')) return;
+			// 拖选文本时不触发跳转,避免误触
+			if (window.getSelection()?.toString()) return;
+			const link = document.getElementById(`${prefix}-link`);
+			if (link instanceof HTMLAnchorElement) window.location.href = link.href;
+		});
+	}
 }
 
 /** 在 [0, length) 中随机取一个下标,可排除 exclude */

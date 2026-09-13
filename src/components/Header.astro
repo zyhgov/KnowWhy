@@ -21,10 +21,22 @@ function isActive(href: string): boolean {
 		<a class="brand" href="/">
 			<!-- 品牌 Logo(public 静态资源,用户提供) -->
 			<img class="brand-logo" src="/kw-logo-彩色.svg" alt="KnowWhy" width="45" height="30" />
-			<!-- 品牌名与中文名:上下滑动 + 透明度渐变的交替切换动画 -->
+			<!-- 品牌名与中文名:逐字上推浮现的交替切换动画(每字独立遮罩,字符间错峰) -->
 			<span class="brand-switcher" aria-label={`${SITE.name} | ${SITE.nameZh}`}>
-				<span class="brand-item brand-en" aria-hidden="true">{SITE.name}</span>
-				<span class="brand-item brand-zh" aria-hidden="true">{SITE.nameZh}</span>
+				<span class="brand-item brand-en" aria-hidden="true">
+					{SITE.name.split('').map((ch, i) => (
+						<span class="brand-char" style={`--d: ${i * 40}ms`}>
+							<span>{ch}</span>
+						</span>
+					))}
+				</span>
+				<span class="brand-item brand-zh" aria-hidden="true">
+					{[...SITE.nameZh].map((ch, i) => (
+						<span class="brand-char" style={`--d: ${i * 40}ms`}>
+							<span>{ch}</span>
+						</span>
+					))}
+				</span>
 			</span>
 		</a>
 		<nav class="site-nav" aria-label="主导航">
@@ -100,9 +112,21 @@ function isActive(href: string): boolean {
 
 	.brand-item {
 		grid-area: 1 / 1;
+		display: inline-flex;
 		white-space: nowrap;
-		opacity: 0;
-		animation: brand-swap 6s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+	}
+
+	/* 逐字遮罩:每个字符在自身遮罩内上下滑动(与首页标题同款逐字上推浮现) */
+	.brand-char {
+		display: inline-block;
+		overflow: hidden;
+	}
+
+	/* --d 为字符级错峰延迟(模板内联);both 保证延迟期间停留在起始帧,避免闪现 */
+	.brand-char > span {
+		display: inline-block;
+		animation: brand-char-swap 6s cubic-bezier(0.45, 0, 0.25, 1) infinite both;
+		animation-delay: var(--d);
 	}
 
 	.brand-en {
@@ -111,10 +135,14 @@ function isActive(href: string): boolean {
 
 	.brand-zh {
 		color: var(--text-muted);
-		animation-delay: -2.7s;
 	}
 
-	@keyframes brand-swap {
+	/* 中文名整体错开半周期,与英文名交替轮换,同时保留逐字错峰 */
+	.brand-zh .brand-char > span {
+		animation-delay: calc(-2.7s + var(--d));
+	}
+
+	@keyframes brand-char-swap {
 		0% {
 			transform: translateY(115%);
 			opacity: 0;
@@ -134,12 +162,13 @@ function isActive(href: string): boolean {
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.brand-item {
+		.brand-char > span {
 			animation: none;
 		}
 
-		.brand-en {
-			opacity: 1;
+		/* 停播后仅保留英文名常显,避免中英文重叠 */
+		.brand-zh {
+			display: none;
 		}
 	}
 

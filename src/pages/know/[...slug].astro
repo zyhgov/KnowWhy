@@ -4,8 +4,10 @@ import type { CollectionEntry } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ArticleHead from '../../components/ArticleHead.astro';
+import ArticleToc from '../../components/ArticleToc.astro';
 import ArticleRelated from '../../components/ArticleRelated.astro';
-import { getCategory } from '../../consts';
+import ArticleJsonLd from '../../components/ArticleJsonLd.astro';
+import { getCategory, getAuthor } from '../../consts';
 import { getKnowHref } from '../../utils';
 
 // 为所有已发布的 KNOW 知识点生成详情页:/know/<slug>/
@@ -23,7 +25,7 @@ interface Props {
 
 const { entry } = Astro.props;
 const { data } = entry;
-const { Content } = await render(entry);
+const { Content, headings } = await render(entry);
 
 // 相关阅读:按 related 中填写的 KNOW 编号匹配已发布内容
 const relatedIds = data.related ?? [];
@@ -33,19 +35,36 @@ const relatedEntries = relatedIds.length
 			({ data: other }) => relatedIds.includes(other.id) && other.status === 'published',
 		)
 	: [];
+
+// SEO:分类名/描述文案/作者显示名,供 BaseLayout(meta)与 ArticleJsonLd(结构化数据)共用
+const categoryName = getCategory(data.category)?.name ?? data.category;
+const pageDescription = `${data.id}・${data.title} —— KnowWhy「你知道吗」:知其然,更要知其所以然。`;
+const authorNames = data.authors.map((key) => getAuthor(key)?.name ?? key);
 ---
 
 <BaseLayout
 	title={data.title}
-	description={`${data.id}・${data.title} —— KnowWhy「你知道吗」:知其然,更要知其所以然。`}
+	description={pageDescription}
 	ogType="article"
 	ogImage={data.ogImage}
+	article={{
+		publishedTime: data.date.toISOString(),
+		authors: authorNames,
+		section: categoryName,
+		tags: data.tags,
+	}}
+	author={authorNames.join('、')}
 >
+	<Fragment slot="after-header">
+		<ArticleToc headings={headings} />
+	</Fragment>
+
 	<article class="article">
 		<nav class="crumbs" aria-label="面包屑">
 			<ol>
 				<li><a href="/">首页</a></li>
 				<li><a href="/know/">Know</a></li>
+				<li><a href={`/${data.category}/`}>{getCategory(data.category)?.name ?? data.category}</a></li>
 				<li aria-current="page">{data.id}</li>
 			</ol>
 		</nav>
@@ -99,6 +118,24 @@ const relatedEntries = relatedIds.length
 
 		<ArticleRelated currentId={data.id} />
 	</article>
+
+	<Fragment slot="head">
+		<ArticleJsonLd
+			title={data.title}
+			description={pageDescription}
+			datePublished={data.date.toISOString()}
+			authors={data.authors}
+			section={categoryName}
+			keywords={data.tags}
+			ogImage={data.ogImage}
+			crumbs={[
+				{ name: '首页', url: '/' },
+				{ name: 'Know', url: '/know/' },
+				{ name: categoryName, url: `/${data.category}/` },
+				{ name: data.id },
+			]}
+		/>
+	</Fragment>
 </BaseLayout>
 
 <style>

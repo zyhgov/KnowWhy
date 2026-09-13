@@ -5,6 +5,8 @@ import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ArticleHead from '../../components/ArticleHead.astro';
 import ArticleToc from '../../components/ArticleToc.astro';
+import ArticleJsonLd from '../../components/ArticleJsonLd.astro';
+import { getAuthor } from '../../consts';
 import { formatDate } from '../../utils';
 
 // 为所有已发布新闻生成详情页:/news/<slug>/
@@ -23,13 +25,24 @@ interface Props {
 const { entry } = Astro.props;
 const { data } = entry;
 const { Content, headings } = await render(entry);
+
+// SEO:描述文案与作者显示名,供 BaseLayout(meta)与 ArticleJsonLd(结构化数据)共用
+const pageDescription = data.summary ?? `${data.title} —— KnowWhy 站点新闻。`;
+const authorNames = data.authors.map((key) => getAuthor(key)?.name ?? key);
 ---
 
 <BaseLayout
 	title={data.title}
-	description={data.summary ?? `${data.title} —— KnowWhy 站点新闻。`}
+	description={pageDescription}
 	ogType="article"
 	ogImage={data.ogImage}
+	article={{
+		publishedTime: data.date.toISOString(),
+		authors: authorNames,
+		section: '站点新闻',
+		tags: data.tags,
+	}}
+	author={authorNames.join('、')}
 >
 	<Fragment slot="after-header">
 		<ArticleToc headings={headings} />
@@ -44,7 +57,7 @@ const { Content, headings } = await render(entry);
 			</ol>
 		</nav>
 
-		<ArticleHead date={data.date} title={data.title} authors={data.authors} />
+		<ArticleHead date={data.date} title={data.title} tags={data.tags} authors={data.authors} />
 
 		{data.summary && <p class="news-lead">{data.summary}</p>}
 
@@ -52,6 +65,23 @@ const { Content, headings } = await render(entry);
 			<Content />
 		</div>
 	</article>
+
+	<Fragment slot="head">
+		<ArticleJsonLd
+			title={data.title}
+			description={pageDescription}
+			datePublished={data.date.toISOString()}
+			authors={data.authors}
+			section="站点新闻"
+			keywords={data.tags}
+			ogImage={data.ogImage}
+			crumbs={[
+				{ name: '首页', url: '/' },
+				{ name: '站点新闻', url: '/news/' },
+				{ name: formatDate(data.date) },
+			]}
+		/>
+	</Fragment>
 </BaseLayout>
 
 <style>

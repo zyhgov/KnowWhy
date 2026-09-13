@@ -76,6 +76,8 @@ const news = defineCollection({
 		title: z.string(),
 		/** 作者 key 数组(在 consts.AUTHORS 注册),支持多作者;缺省为站长 */
 		authors: z.array(z.string()).default(['zyhorg']),
+		/** 标签(与 WHY / Know 共用同一标签体系) */
+		tags: z.array(z.string()).default([]),
 		/** 列表页摘要(可选) */
 		summary: z.string().optional(),
 		date: z.coerce.date(),

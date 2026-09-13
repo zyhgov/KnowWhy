@@ -31,6 +31,14 @@ const groups = [
 ].filter((group) => group.sources.length > 0);
 
 const totalSources = groups.reduce((sum, group) => sum + group.sources.length, 0);
+
+// 每页 10 组(与归档页每页条数一致):SSR 只渲染第一页,其余由脚本按内嵌 JSON 分页
+const PER_PAGE = 10;
+const totalPages = Math.max(1, Math.ceil(groups.length / PER_PAGE));
+const firstPage = groups.slice(0, PER_PAGE);
+
+// 转义 < 防止标题中的标签字符截断内嵌 JSON
+const groupsJson = JSON.stringify(groups).replace(/</g, '\\u003c');
 ---
 
 <BaseLayout
@@ -64,28 +72,44 @@ const totalSources = groups.reduce((sum, group) => sum + group.sources.length, 0
 		groups.length === 0 ? (
 			<p class="source-empty">来源记录整理中,敬请期待。</p>
 		) : (
-			<section class="sources-list" aria-label="全部来源">
-				{groups.map((group) => (
-					<article class="source-group">
-						<h2 class="source-title">
-							<span class:list={['source-serial', group.type === 'why' ? 'is-why' : 'is-know']}>{group.id}</span>
-							<a href={group.href}>{group.title}</a>
-						</h2>
-						<ul class="source-links">
-							{group.sources.map((source) => (
-								<li>
-									<a href={source.url} target="_blank" rel="noopener noreferrer">
-										{source.name}
-									</a>
-								</li>
-							))}
-						</ul>
-					</article>
-				))}
-			</section>
+			<div class="source-browser" data-source-browser>
+				<p class="entries-status source-status" data-source-status>
+					共 {groups.length} 篇文章{totalPages > 1 ? ` · 第 1 / ${totalPages} 页` : ''}
+				</p>
+				<section class="sources-list" data-source-list aria-label="全部来源">
+					{firstPage.map((group) => (
+						<article class="source-group">
+							<h2 class="source-title">
+								<span class:list={['source-serial', group.type === 'why' ? 'is-why' : 'is-know']}>
+									{group.id}
+								</span>
+								<a href={group.href}>{group.title}</a>
+							</h2>
+							<ul class="source-links">
+								{group.sources.map((source) => (
+									<li>
+										<a href={source.url} target="_blank" rel="noopener noreferrer">
+											{source.name}
+										</a>
+									</li>
+								))}
+							</ul>
+						</article>
+					))}
+				</section>
+				<nav class="entries-pager" data-pager aria-label="分页" hidden></nav>
+				<noscript>
+					<p class="search-status">分页需要启用 JavaScript,请在浏览器设置中开启后刷新重试。</p>
+				</noscript>
+				<script type="application/json" data-source-data set:html={groupsJson} />
+			</div>
 		)
 	}
 </BaseLayout>
+
+<script>
+	import '../scripts/source-browser';
+</script>
 
 <style>
 	.page-head {
@@ -102,9 +126,10 @@ const totalSources = groups.reduce((sum, group) => sum + group.sources.length, 0
 		color: var(--text-muted);
 	}
 
-	/* 资料规范说明卡 */
+	/* 资料规范说明卡(限宽居中,避免靠左留白) */
 	.source-notes {
 		max-width: 680px;
+		margin-inline: auto;
 		padding: 1.25rem 1.4rem;
 		background: var(--mist);
 		border: 1px solid var(--line);
@@ -125,73 +150,24 @@ const totalSources = groups.reduce((sum, group) => sum + group.sources.length, 0
 		color: var(--text);
 	}
 
+	/* 根容器:翻页后平滑滚动定位时避开吸顶导航(与归档页一致) */
+	.source-browser {
+		scroll-margin-top: 84px;
+	}
+
+	/* 状态行:与来源列表同一居中宽度 */
+	.source-status {
+		max-width: 46rem;
+		margin-inline: auto;
+		margin-top: 1.75rem;
+		margin-bottom: 0.85rem;
+	}
+
 	.sources-list {
 		display: grid;
 		gap: 1rem;
-		margin-top: 1.75rem;
-	}
-
-	/* 每篇文章一组:标题行 + 来源链接列表 */
-	.source-group {
-		padding: 1.15rem 1.35rem;
-		background: var(--paper);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-md);
-		box-shadow: var(--shadow-card);
-	}
-
-	.source-title {
-		display: flex;
-		align-items: center;
-		gap: 0.6rem;
-		font-size: 1.02rem;
-	}
-
-	.source-serial {
-		flex-shrink: 0;
-		font-family: var(--font-mono);
-		font-size: 0.72rem;
-		font-weight: 600;
-		padding: 0.12rem 0.55rem;
-		border-radius: 999px;
-	}
-
-	.source-serial.is-why {
-		color: var(--amber-deep);
-		background: var(--amber-soft);
-	}
-
-	.source-serial.is-know {
-		color: var(--blue-deep);
-		background: var(--blue-soft);
-	}
-
-	.source-title a {
-		color: var(--ink-deep);
-	}
-
-	.source-title a:hover {
-		color: var(--blue);
-	}
-
-	.source-links {
-		display: grid;
-		gap: 0.35rem;
-		margin-top: 0.7rem;
-		padding-left: 1.1rem;
-		font-size: 0.88rem;
-		line-height: 1.65;
-	}
-
-	.source-links a {
-		color: var(--text-muted);
-		text-decoration: underline;
-		text-decoration-color: color-mix(in srgb, var(--text-muted) 40%, transparent);
-		text-underline-offset: 2px;
-	}
-
-	.source-links a:hover {
-		color: var(--blue-deep);
+		max-width: 46rem;
+		margin-inline: auto;
 	}
 
 	.source-empty {

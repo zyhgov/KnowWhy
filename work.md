@@ -340,3 +340,74 @@
 - 代码托管:初始化 git 仓库并推送 https://github.com/zyhgov/KnowWhy(135 文件,node_modules/dist 已排除);用户已完成 Cloudflare 部署,站点上线 `https://knowwhy.zyhorg.cn`。
 - 问题:访问 `/sitemap.xml` 返回 404。根因:@astrojs/sitemap 默认生成入口为 `sitemap-index.xml`(+`sitemap-0.xml`),从无 `sitemap.xml` 文件名。
 - 修复:新增 `public/sitemap.xml`(sitemapindex 格式转发 sitemap-0.xml,惯例地址直接可用);`robots.txt` 的 Sitemap 行改为 `/sitemap.xml`。(45000 条 URL 拆分时需在 sitemap.xml 追加引用——见文件注释)
+
+## 2026-09-13
+
+### 09:10 - 补记:上轮完成但未记录的三项改动(Hero 吉祥物大图、统计脚本、Know 目录)
+- 首页 Hero 改造:删除横/竖背景图,改 flex 左文右图布局,`/mascot/Mascot-Thinking.png` 右侧大图(高 `clamp(18rem, 30vw, 25rem)`);≤860px 纵向堆叠、≤640px 再收紧。
+- 统计脚本:`BaseLayout` head 注入 Microsoft Clarity(项目 ID `yh39o7mjvy`,异步 IIFE)与 51.LA(id `LJhpuVmQONPz46Gl`,同步引入)全站脚本。
+- Know 文章目录:`know/[...slug].astro` 接入 `<ArticleToc headings={headings} />`(此前仅 WHY/新闻有),三条内容线目录齐平。
+
+### 09:18 - 响应式与内容体系六项优化(小屏布局 / 面包屑 / 搜索筛选 / 静态页居中 / OG 默认图 / 标签页)
+- ① 文章字号选择器:`FontSizeSwitcher` 增加 ≤640px 规则(按钮收窄至 `0.72rem`/`0.18rem 0.5rem`),避免挤占文章元信息行。
+- ② 面包屑层级:WHY 文章改为「首页>WHY>分类>编号」(补 `/why/` 层);Know 文章补分类层为「首页>Know>分类>编号」。
+- ③ 搜索页筛选:global.css 新增 ≤640px 规则,内容线/分类/年份各占整行、下拉撑满(带 `.search-filters` 前缀提高特异性,修复基础规则 `min-width` 覆盖小屏 `min-width: 0` 问题)。
+- ④ 静态页居中:about/privacy/terms 的 prose 容器加 `is-page` 类(`.prose.is-page { margin-inline: auto }`),sources 页 notes/list 限宽居中——消除靠左留白。
+- ⑤ OG 默认图:`BaseLayout` 缺省图由 `/kw-og.png` 改为 `/kw-og-images.jpg`。
+- ⑥ 新增 `/tags/` 标签聚合页:聚合 WHY/Know/新闻三线已发布 tags,标签云 + 分组卡片(锚点跳转);文章页 tags 改链接至对应分组;news schema 补 `tags` 字段(此前 mdx 写了 tags 但被 schema 忽略)并在新闻页显示;页脚「分类」列加「全部标签」入口。
+- 验证:`npm run build` 一次通过(32 页面,37.49s);产物抽查——/tags/ 已生成、why 面包屑含 `/why/`、know 页含 tags 链接、about 页 `prose is-page` 与 `og:image=kw-og-images.jpg`、CSS 含小屏筛选规则。
+
+### 09:45 - /tags/ 与 /sources/ 分页改造(SSR 仅第一页 + 客户端重建) + 修复动态节点样式丢失
+- 用户反馈:两页直接展示全部条目,性能与加载不达标;要求 tags 页加「分页 + 搜索标签」、sources 页加「分页(无需搜索)」。
+- 方案(每页 10 组,与归档页条数一致):构建期把全量分组 JSON 内嵌(`<script type="application/json" data-tag-data / data-source-data>`,转义 `<` 防截断),SSR 只渲染第一页 DOM,翻页/搜索由客户端脚本重建当前页(createElement,textContent 防 XSS)。
+- 新增 `src/scripts/tag-browser.ts`:搜索(标签名包含匹配,忽略大小写) + 分页 + URL 同步(`?q`/`?page`,replaceState);文章页 `/tags/#tag-xxx` 直达定位(跨页自动切页后 scrollIntoView),hashchange 兜底。
+- 新增 `src/scripts/source-browser.ts`:仅分页 + `?page` 同步。
+- 重写 `src/pages/tags/index.astro`(搜索框/状态行/标签云/分组/空态/分页器/noscript/内嵌 JSON)与 `src/pages/sources.astro`(状态行/列表/分页器/noscript/内嵌 JSON,内容保持居中)。sources 页 SSR 10 组 + 内嵌 11 组(共 2 页);tags 页 SSR 10 组 + 内嵌 33 组(共 4 页)。
+- 关键坑 1:两脚本原为「全局脚本」(无 import/export),与 related-random.ts 等脚本顶层变量共享作用域冲突 → 尾部加 `export {};` 标记为模块隔离(站点脚本新约定)。
+- 关键坑 2:客户端重建的节点没有 scoped 样式的 `data-astro-cid` 属性 → 芯片/分组卡片样式失效。修复:把动态重建元素的样式移入 `src/styles/global.css`(站内既有约定,同 site-search/entries-browser),页面 scoped 仅保留 SSR 元素样式(根容器/搜索框/状态行/空态)。
+- 验证:`npm run build` 通过(32 页面,12.76s/11.84s 两次);产物抽查——分页容器/内联脚本/noscript/JSON 均就位;修复后 scoped 形态归零、`.tag-chip{`/`.source-group{` 裸选择器进入 BaseLayout 全局 CSS 且两页均引用。
+
+### 09:50 - 文章正文右侧留白修复(72ch 限宽与 860px 容器不匹配)
+- 现象:文章页正文块右侧空出约 100px。
+- 根因:`global.css` 的 `.prose { max-width: 72ch }`(默认字号下约 750px)比 `.article` 容器(860px)窄且靠左,而同容器内标题/参考资料等均全宽,右侧露出差值。
+- 修复:`.prose` 撤掉 max-width(文章页正文随容器全宽,与标题/参考资料对齐);静态页限宽移至 `.prose.is-page { max-width: 72ch; margin-inline: auto }`(静态页容器 1080px 较宽,需保留限宽保证阅读行长)。
+- 验证:`npm run build` 一次通过(32 页面,12.38s);产物确认 `.prose{font-size:...;letter-spacing:.02em}` 无 max-width、`.prose.is-page{max-width:72ch}` 就位。
+
+### 09:52 - 修复文章 og:image 空字符串未回退默认图(输出成站点根)
+- 现象:未设置图片的 8 篇文章 view-source 的 og:image 输出 `https://knowwhy.zyhorg.cn/`(仅站点根)。
+- 根因:这些文章 frontmatter 写的是 `ogImage: ""`(空字符串),而 `ogImage ?? '/kw-og-images.jpg'` 中的 `??` 只拦 null/undefined,空字符串直接通过 → `new URL('', SITE.url)` 解析成站点根。
+- 修复:`BaseLayout` 改为 `new URL(ogImage?.trim() || '/kw-og-images.jpg', SITE.url)`(空串/纯空白/缺省一律回退默认图)。
+- 验证:`npm run build` 一次通过(32 页面,12.24s);全站产物统计——30 页为默认图 kw-og-images.jpg、why-0002.jpg 与 Mascot-Thumbs-Up.png 各保留 1 页、站点根残留 0。
+
+### 09:46 - 首页「今日发现」整卡点击跳转
+- 需求:今日阅读 / 随机词条卡片,点卡片任意位置即可跳转,不再必须点「阅读全文」。
+- 实现:`home-discover.ts` 为两卡片添加 click 委托——实时读取对应 `#xxx-link` 的 href 跳转(随机词条切换后自动指向新条目);点「阅读全文」链接、「换一条」按钮(用 `closest('a, button')` 判断)或拖选文字时(读取 `getSelection`)不触发。
+- 样式:`index.astro` 的 `.discover-card` 加 `cursor: pointer`;卡片原有 hover 抬升/描边效果继续作为可点击提示。
+- 验证:`npm run build` 一次通过(32 页面,11.74s);产物确认首页 CSS 含 `cursor:pointer`、内联脚本含整卡点击逻辑。
+
+### 09:55 - 全站 SEO 辅助项补全(结构化数据 + Twitter 卡片 + og:article + noindex)
+- 需求:检查每个页面的 SEO 设置辅助项,能写的全部写完整。
+- 新增 `src/components/ArticleJsonLd.astro`:文章页结构化数据(Article + BreadcrumbList,数组单 script 注入 head;标题/描述/发布日期/作者 Person 数组/发布者 Organization+logo/绝对 URL 配图/板块/关键词;`<` 转义防截断)。WHY/Know/News 三个详情页接入(News 此前没有 head 插槽,一并补上;面包屑末项按规范不带 URL)。
+- `BaseLayout` 强化:① Twitter 卡片(summary_large_image + title/description/image/imageAlt,此前完全没有);② 新增可选 `article` prop → og:article:published_time / author / section / tag 系列(此前完全没有);③ 新增 `author` prop → `extend` 输出 `meta name="author"`;④ 新增 `noindex` prop → robots meta。
+- 首页 `index.astro`:head 插槽注入 WebSite + Organization(JSON-LD:名称/别名/URL/描述/语言/logo/email/publisher);FAQPage TODO 注释更新为「无真实问答,不虚构」。
+- `404.astro` 与 `search/index.astro` 传 `noindex`(防低质页被索引收录;其余页面保持默认 index,follow)。
+- 关键取舍:og:image:width/height 不写死——在用的三张图尺寸不一(默认图 4405x2480、why-0002 526x361、吉祥物 1254x1254)且未来会新增图,写错尺寸会误导平台裁切;不写时 FB/Slack 会异步分析,无副作用。
+- 验证:`npm run build` 一次通过(32 页面,11.93s);产物抽查——文章页(know/tech 各一张)twitter:card / og:article:published_time / article:tag / BreadcrumbList / headline / meta author 全就位、JSON-LD image 为绝对 URL;首页 WebSite / Organization / inLanguage / publisher 就位且无 FAQPage;404 与 search 页 noindex=True;about 等 mdx 静态页 twitter / canonical / robots 就位。
+
+### 09:57 - 新文章 dev 渲染报错排查(why-keyboard-is-qwerty-not-abcdef)
+- 现象:用户新建该文章后 dev 打开报 `Unexpected error while rendering → why-keyboard-is-qwerty-not-abcdef`。
+- 排查:`npm run build` 一次通过(33 页,含新增该页产物,正文/表格/结构化数据渲染完整)——文件本身无任何问题;堆栈定位 `astro/dist/content/runtime.js` 的 render() 中 `typeof renderEntryImport !== "function"` 抛错,即 dev 的 content-module-imports 映射尚未收录新文件(getStaticPaths 扫描文件系统导致路由先于渲染模块出现,两缓存不对称)。
+- 结论:与既有经验一致——新增 .mdx 后 dev server 不自动热更新,重启(`Ctrl+C` 后重跑 `npm run dev`)即恢复;无需改动任何文件。
+
+### 11:15 - 首页 GSAP 动效升级(设计感强化)
+- 需求:用上 GSAP 让首页更有设计感(原动效仅为基础 fade-up + 整块淡入,吉祥物完全静止)。
+- Hero:① 标题改用 SplitText 逐行遮罩 + 逐字上推浮现(`aria:'auto'` 保留可访问名称;等 `document.fonts.ready` 后初始化,避免按回退字形测量错位);② 吉祥物新增飘入(x/rotation/autoAlpha)并持续轻浮(y ± 9px 循环,y 与入场 x 不冲突);③ 新增琥珀柔光斑 `.hero-glow` 随指针平滑跟随(`gsap.quickTo`,仅 pointer:fine 设备;z-index 分层:内容之下、底色之上)。
+- 区块:① 各区块标题新增琥珀渐变竖条(`h2::before` 的 scaleY 由 CSS 变量 `--head-bar` 驱动,无脚本/降级时默认完整显示);② 入场升级为 fade-up + 微缩(scale 0.985,power3 缓动,错峰 0.06)。
+- 降级:prefers-reduced-motion 时完全不拆字/无动效/隐藏光斑;无 JS 时静态页面完整。
+- 验证:`npm run build` 一次通过(46 页,14.44s);产物抽查——hero-glow 与竖条 CSS 就位;home-motion 因打包 GSAP 全家桶改为外链 chunk(119KB,仅首页加载),内含 yPercent/--head-bar/fonts.ready/mask/quickTo/reduced-motion 全部特征。
+
+### 11:20 - 导航栏品牌文字切换升级为「逐字上推浮现」
+- 需求:导航栏「KnowWhy / 知其所以然」的切换改用首页标题同款效果(逐字上推浮现)。
+- 技术选型:导航栏是全站组件,不引入 GSAP(仅首页按需加载,若用于导航栏会让所有页面背 119KB 包);效果本质为「字符独立遮罩 + 上推 + 错峰」,纯 CSS 复刻,零新增依赖。
+- 实现(`Header.astro`):① 模板把两个品牌名拆成逐字符结构(每字外层遮罩 span + 内层滑动 span,内联 `--d: i*40ms` 错峰变量;英文按 split、中文按 spread 拆分);② CSS 动画从「整词滑动」(`.brand-item`)下移到字符层(`.brand-char > span`),keyframes 改名 `brand-char-swap`(位移 115% 不变);③ 加 `both` 填充模式,避免正延迟字符在延迟期间闪现;④ 中文名 `calc(-2.7s + var(--d))` 整体错开半周期并保留逐字错峰;⑤ reduced-motion 时停播改字符层控制,仅英文名常显(避免中英重叠)。
+- 验证:`npm run build` 一次通过(46 页,11.09s);产物抽查——首页 HTML 含 12 个 `brand-char` 拆字结构与内联 `--d:`;共享 CSS 含 `brand-char-swap`/`var(--d)`/`-2.7s`/reduced-motion 降级。

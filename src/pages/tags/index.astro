@@ -1,0 +1,207 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getKnowHref, getWhyHref } from '../../utils';
+
+// 标签索引:聚合全部已发布的 WHY / Know / 新闻,按使用篇数降序(同数按名称排序)
+const [whyEntries, knowEntries, newsEntries] = await Promise.all([
+	getCollection('why', ({ data }) => data.status === 'published'),
+	getCollection('know', ({ data }) => data.status === 'published'),
+	getCollection('news', ({ data }) => data.status === 'published'),
+]);
+
+interface TagItem {
+	type: 'why' | 'know' | 'news';
+	/** 编号(新闻无编号,不显示) */
+	id?: string;
+	title: string;
+	href: string;
+}
+
+const tagMap = new Map<string, TagItem[]>();
+const addTag = (tag: string, item: TagItem) => {
+	tagMap.set(tag, [...(tagMap.get(tag) ?? []), item]);
+};
+
+for (const entry of whyEntries) {
+	for (const tag of entry.data.tags ?? []) {
+		addTag(tag, { type: 'why', id: entry.data.id, title: entry.data.title, href: getWhyHref(entry) });
+	}
+}
+for (const entry of knowEntries) {
+	for (const tag of entry.data.tags ?? []) {
+		addTag(tag, { type: 'know', id: entry.data.id, title: entry.data.title, href: getKnowHref(entry) });
+	}
+}
+for (const entry of newsEntries) {
+	for (const tag of entry.data.tags ?? []) {
+		addTag(tag, { type: 'news', title: entry.data.title, href: `/news/${entry.id}/` });
+	}
+}
+
+const groups = [...tagMap.entries()]
+	.map(([tag, items]) => ({ tag, items }))
+	.sort((a, b) => b.items.length - a.items.length || a.tag.localeCompare(b.tag, 'zh'));
+
+const taggedCount = new Set(groups.flatMap((group) => group.items.map((item) => item.href))).size;
+
+// 每页 10 组(与归档页每页条数一致):SSR 只渲染第一页,其余由脚本按内嵌 JSON 搜索/分页
+const PER_PAGE = 10;
+const totalPages = Math.max(1, Math.ceil(groups.length / PER_PAGE));
+const firstPage = groups.slice(0, PER_PAGE);
+
+// 转义 < 防止标题中的标签字符截断内嵌 JSON
+const groupsJson = JSON.stringify(groups).replace(/</g, '\\u003c');
+---
+
+<BaseLayout
+	title="标签"
+	description={`KnowWhy 全部标签:${groups.length} 个标签串起 ${taggedCount} 篇文章——支持搜索与分页,按主题词发现 WHY、Know 与站点新闻的更多内容。`}
+>
+	<nav class="crumbs" aria-label="面包屑">
+		<ol>
+			<li><a href="/">首页</a></li>
+			<li aria-current="page">标签</li>
+		</ol>
+	</nav>
+
+	<header class="page-head">
+		<h1>标签浏览</h1>
+		<p>共 {groups.length} 个标签,串起 {taggedCount} 篇文章——支持搜索,点击标签跳到对应分组。</p>
+	</header>
+
+	<div class="tag-browser" data-tag-browser>
+		<div class="tag-search">
+			<input
+				type="search"
+				data-tag-search
+				placeholder="搜索标签,如:设计 / 电池 / 字体"
+				aria-label="搜索标签"
+				autocomplete="off"
+			/>
+		</div>
+
+		<p class="entries-status tag-status" data-tag-status>
+			共 {groups.length} 个标签{totalPages > 1 ? ` · 第 1 / ${totalPages} 页` : ''}
+		</p>
+
+		<nav class="tag-cloud" data-tag-cloud aria-label="标签(当前页)">
+			{
+				firstPage.map((group) => (
+					<a class="tag-chip" href={`#tag-${group.tag}`} data-tag-chip={group.tag}>
+						{group.tag}
+						<span class="tag-chip-count">{group.items.length}</span>
+					</a>
+				))
+			}
+		</nav>
+
+		<section class="tag-groups" data-tag-groups aria-label="按标签分组的文章">
+			{
+				firstPage.map((group) => (
+					<article class="tag-group" id={`tag-${group.tag}`}>
+						<h2 class="tag-group-title">
+							{group.tag}
+							<span class="tag-group-count">{group.items.length} 篇</span>
+						</h2>
+						<ul class="tag-links">
+							{group.items.map((item) => (
+								<li>
+									<a href={item.href}>
+										{item.id && (
+											<span class:list={['tag-serial', `is-${item.type}`]}>{item.id}</span>
+										)}
+										{item.title}
+									</a>
+								</li>
+							))}
+						</ul>
+					</article>
+				))
+			}
+		</section>
+
+		<p class="tag-empty" data-tag-empty hidden>没有匹配的标签,换个关键词试试。</p>
+
+		<nav class="entries-pager" data-pager aria-label="分页" hidden></nav>
+
+		<noscript>
+			<p class="search-status">搜索与分页需要启用 JavaScript,请在浏览器设置中开启后刷新重试。</p>
+		</noscript>
+
+		<script type="application/json" data-tag-data set:html={groupsJson} />
+	</div>
+</BaseLayout>
+
+<script>
+	import '../../scripts/tag-browser';
+</script>
+
+<style>
+	.page-head {
+		margin-block: 1.25rem 2rem;
+	}
+
+	.page-head h1 {
+		font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+	}
+
+	.page-head p {
+		max-width: 56ch;
+		margin-top: 0.5rem;
+		color: var(--text-muted);
+	}
+
+	/* 根容器:翻页后平滑滚动定位时避开吸顶导航(与归档页一致) */
+	.tag-browser {
+		scroll-margin-top: 84px;
+	}
+
+	.tag-search {
+		margin-bottom: 1.1rem;
+	}
+
+	.tag-search input {
+		width: 100%;
+		padding: 0.55rem 0.9rem;
+		font: inherit;
+		font-size: 0.95rem;
+		color: var(--ink);
+		background: var(--paper);
+		border: 1px solid var(--line);
+		border-radius: 0.7rem;
+		transition:
+			border-color 160ms ease,
+			box-shadow 160ms ease;
+	}
+
+	.tag-search input:focus {
+		outline: none;
+		border-color: var(--amber);
+		box-shadow: 0 0 0 3px var(--amber-soft);
+	}
+
+	.tag-status {
+		margin-bottom: 0.85rem;
+	}
+
+	.tag-empty {
+		margin-top: 1.5rem;
+		color: var(--text-muted);
+	}
+
+	/* 标签云:胶囊 chips,点击跳到对应分组 */
+	.tag-cloud {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	/* 分组列表:卡片式(芯片与卡片样式在 global.css:客户端重建的节点不受 scoped 样式作用) */
+	.tag-groups {
+		display: grid;
+		gap: 1rem;
+		margin-top: 1.75rem;
+	}
+
+</style>

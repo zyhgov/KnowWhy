@@ -71,11 +71,38 @@ const fallbackItem = {
 };
 const dailyFallback = discoverItems[0] ?? fallbackItem;
 const randomFallback = discoverItems[1] ?? dailyFallback;
+
+// SEO:全站级结构化数据(WebSite + Organization),经 head 插槽注入
+const siteUrl = new URL('/', SITE.url).href;
+const siteJsonLd = JSON.stringify([
+	{
+		'@context': 'https://schema.org',
+		'@type': 'WebSite',
+		name: `${SITE.name}|${SITE.nameZh}`,
+		alternateName: SITE.nameZh,
+		url: siteUrl,
+		description: SITE.description,
+		inLanguage: 'zh-CN',
+		publisher: { '@type': 'Organization', name: `${SITE.name}|${SITE.nameZh}`, url: siteUrl },
+	},
+	{
+		'@context': 'https://schema.org',
+		'@type': 'Organization',
+		name: `${SITE.name}|${SITE.nameZh}`,
+		alternateName: SITE.nameZh,
+		url: siteUrl,
+		logo: { '@type': 'ImageObject', url: new URL('/icon/android-icon-192x192.png', SITE.url).href },
+		email: SITE.email,
+		description: SITE.description,
+	},
+]).replace(/</g, '\\u003c');
 ---
 
 <BaseLayout description={SITE.description}>
-	<!-- Hero -->
+	<!-- Hero:左文右吉祥物(小屏上下堆叠) -->
 	<section class="hero">
+		<!-- 指针随动柔光斑(位置由 home-motion.ts 驱动) -->
+		<div class="hero-glow" aria-hidden="true"></div>
 		<div class="hero-main">
 			<p class="hero-kicker">KnowWhy · 知其所以然</p>
 			<h1 class="hero-title">知其然,<br />更要知其所以然。</h1>
@@ -86,6 +113,9 @@ const randomFallback = discoverItems[1] ?? dailyFallback;
 				<a class="btn btn-primary" href="#latest">浏览最新 WHY</a>
 				<a class="btn btn-ghost" href="#latest-know">浏览最新 Know</a>
 			</div>
+		</div>
+		<div class="hero-visual">
+			<img src="/mascot/Mascot-Thinking.png" alt="小问托腮思考" />
 		</div>
 	</section>
 
@@ -230,9 +260,11 @@ const randomFallback = discoverItems[1] ?? dailyFallback;
 	</section>
 
 	<Fragment slot="head">
+		<script type="application/ld+json" is:inline set:html={siteJsonLd} />
 		{/*
-			TODO: Schema.org FAQPage(JSON-LD)注入位置
-			建议结构:{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"…","acceptedAnswer":{"@type":"Answer","text":"…"}}]}
+			TODO: Schema.org FAQPage(JSON-LD)——首页当前没有真实 Q&A 内容,不虚构;
+			未来若新增「常见问题」区块,在此按该区块的真实问答注入:
+			{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"…","acceptedAnswer":{"@type":"Answer","text":"…"}}]}
 		*/}
 	</Fragment>
 </BaseLayout>
@@ -246,22 +278,63 @@ const randomFallback = discoverItems[1] ?? dailyFallback;
 </script>
 
 <style>
-	/* Hero:背景为横版吉祥物图(白色调,文本/按钮用深色系);透明区域透出浅色兜底 */
+	/* Hero:左文右吉祥物大图;不再使用背景图,浅色渐变打底 */
 	.hero {
 		position: relative;
 		overflow: hidden;
-		min-height: 20rem;
-		padding: 3.5rem 2.75rem;
-		background:
-			url('/mascot/横.jpg') center / cover no-repeat,
-			linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1.5rem 2.5rem;
+		min-height: 22rem;
+		padding: 3.25rem 2.75rem;
+		background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
 		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-card);
 	}
 
 	.hero-main {
+		position: relative;
+		z-index: 1;
+		flex: 1 1 auto;
 		min-width: 0;
-		max-width: 58%;
+		max-width: 33rem;
+	}
+
+	/* 吉祥物立绘:右侧大图,底部对齐;object-fit 防极端情况变形 */
+	.hero-visual {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		flex: 0 0 auto;
+		align-items: flex-end;
+		justify-content: center;
+	}
+
+	.hero-visual img {
+		height: clamp(18rem, 30vw, 25rem);
+		width: auto;
+		max-width: 100%;
+		object-fit: contain;
+	}
+
+	/* 指针随动柔光斑:内容之下、底色之上的琥珀微光(home-motion.ts 平滑跟随) */
+	.hero-glow {
+		position: absolute;
+		left: 0;
+		top: 0;
+		z-index: 0;
+		width: 560px;
+		height: 560px;
+		margin: -280px 0 0 -280px;
+		pointer-events: none;
+		background: radial-gradient(
+			circle,
+			rgb(245 158 11 / 12%) 0%,
+			rgb(245 158 11 / 5%) 38%,
+			transparent 68%
+		);
+		opacity: 0;
 	}
 
 	.hero-kicker {
@@ -330,6 +403,26 @@ const randomFallback = discoverItems[1] ?? dailyFallback;
 		margin-top: 3rem;
 	}
 
+	/* 区块标题色条:滚动进入时展开(home-motion.ts 驱动 --head-bar;无脚本/降级时默认完整) */
+	.home-section .section-head h2 {
+		--head-bar: 1;
+		position: relative;
+		padding-left: 0.85rem;
+	}
+
+	.home-section .section-head h2::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 0.16em;
+		bottom: 0.16em;
+		width: 3px;
+		border-radius: 999px;
+		background: linear-gradient(180deg, var(--amber) 0%, var(--amber-deep) 100%);
+		transform: scaleY(var(--head-bar));
+		transform-origin: top center;
+	}
+
 	/* ---- 今日发现:每日阅读 + 随机词条 ---- */
 	.discover-grid {
 		display: grid;
@@ -339,6 +432,8 @@ const randomFallback = discoverItems[1] ?? dailyFallback;
 
 	.discover-card {
 		display: flex;
+		/* 整卡可点击跳转(见 home-discover.ts),手型提示 */
+		cursor: pointer;
 		padding: 1.4rem 1.5rem;
 		background: var(--paper);
 		border: 1px solid var(--line);
@@ -491,19 +586,24 @@ const randomFallback = discoverItems[1] ?? dailyFallback;
 			grid-template-columns: 1fr;
 		}
 
-		/* 小屏:换竖版图(高度铺满容器等比缩放,底部对齐);底部留白加高,避免文本/按钮盖到吉祥物 */
+		/* 小屏:Hero 改上下堆叠,文字在上、吉祥物居中在下 */
 		.hero {
-			background-image: url('/mascot/竖.jpg');
-			background-size: auto 100%;
-			background-position: bottom center;
-			padding-bottom: 22rem;
+			flex-direction: column;
+			align-items: center;
+			gap: 1.75rem;
+			padding: 2.75rem 2rem;
 		}
 
 		.hero-main {
+			width: 100%;
 			max-width: 100%;
 		}
 
-		/* 小屏隐藏 Hero 按钮(竖图下空间留给吉祥物) */
+		.hero-visual img {
+			height: clamp(15rem, 58vw, 19rem);
+		}
+
+		/* 小屏隐藏 Hero 按钮(空间留给吉祥物) */
 		.hero-actions {
 			display: none;
 		}
@@ -512,6 +612,10 @@ const randomFallback = discoverItems[1] ?? dailyFallback;
 	@media (prefers-reduced-motion: reduce) {
 		.discover-content {
 			transition: none;
+		}
+
+		.hero-glow {
+			display: none;
 		}
 	}
 
@@ -531,7 +635,11 @@ const randomFallback = discoverItems[1] ?? dailyFallback;
 
 	@media (max-width: 640px) {
 		.hero {
-			padding: 2.5rem 1.75rem 22rem;
+			padding: 2.25rem 1.5rem;
+		}
+
+		.hero-visual img {
+			height: clamp(13rem, 60vw, 16rem);
 		}
 	}
 </style>

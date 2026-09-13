@@ -6,7 +6,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import ArticleHead from '../../components/ArticleHead.astro';
 import ArticleToc from '../../components/ArticleToc.astro';
 import ArticleRelated from '../../components/ArticleRelated.astro';
-import { getCategory } from '../../consts';
+import ArticleJsonLd from '../../components/ArticleJsonLd.astro';
+import { getCategory, getAuthor } from '../../consts';
 import { getWhyHref, getWhySlug } from '../../utils';
 
 // 为所有已发布内容生成详情页:/<category>/<slug>/
@@ -35,13 +36,24 @@ const relatedEntries = relatedIds.length
 			({ data: other }) => relatedIds.includes(other.id) && other.status === 'published',
 		)
 	: [];
+
+// SEO:描述文案与作者显示名,供 BaseLayout(meta)与 ArticleJsonLd(结构化数据)共用
+const pageDescription = `${data.id}・${data.title} —— KnowWhy「${category?.name ?? data.category}」:知其然,更要知其所以然。`;
+const authorNames = data.authors.map((key) => getAuthor(key)?.name ?? key);
 ---
 
 <BaseLayout
 	title={data.title}
-	description={`${data.id}・${data.title} —— KnowWhy「${category?.name ?? data.category}」:知其然,更要知其所以然。`}
+	description={pageDescription}
 	ogType="article"
 	ogImage={data.ogImage}
+	article={{
+		publishedTime: data.date.toISOString(),
+		authors: authorNames,
+		section: category?.name ?? data.category,
+		tags: data.tags,
+	}}
+	author={authorNames.join('、')}
 >
 	<Fragment slot="after-header">
 		<ArticleToc headings={headings} />
@@ -51,6 +63,7 @@ const relatedEntries = relatedIds.length
 		<nav class="crumbs" aria-label="面包屑">
 			<ol>
 				<li><a href="/">首页</a></li>
+				<li><a href="/why/">WHY</a></li>
 				<li><a href={`/${data.category}/`}>{category?.name ?? data.category}</a></li>
 				<li aria-current="page">{data.id}</li>
 			</ol>
@@ -107,10 +120,21 @@ const relatedEntries = relatedIds.length
 	</article>
 
 	<Fragment slot="head">
-		{/*
-			TODO: Schema.org Article(JSON-LD)注入位置
-			建议结构:{"@context":"https://schema.org","@type":"Article","headline":"…","datePublished":"…","author":{"@type":"Organization","name":"KnowWhy"}}
-		*/}
+		<ArticleJsonLd
+			title={data.title}
+			description={pageDescription}
+			datePublished={data.date.toISOString()}
+			authors={data.authors}
+			section={category?.name ?? data.category}
+			keywords={data.tags}
+			ogImage={data.ogImage}
+			crumbs={[
+				{ name: '首页', url: '/' },
+				{ name: 'WHY', url: '/why/' },
+				{ name: category?.name ?? data.category, url: `/${data.category}/` },
+				{ name: data.id },
+			]}
+		/>
 	</Fragment>
 </BaseLayout>
 

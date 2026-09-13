@@ -64,7 +64,9 @@ const authorList = authors.map((key) => getAuthor(key)).filter((author) => autho
 		tags.length > 0 && (
 			<ul class="article-tags">
 				{tags.map((tag) => (
-					<li>{tag}</li>
+					<li>
+						<a href={`/tags/#tag-${tag}`}>{tag}</a>
+					</li>
 				))}
 			</ul>
 		)
@@ -169,12 +171,21 @@ const authorList = authors.map((key) => getAuthor(key)).filter((author) => autho
 		list-style: none;
 	}
 
-	.article-tags li {
+	.article-tags a {
+		display: inline-block;
 		font-size: 0.75rem;
 		color: var(--text-muted);
 		border: 1px solid var(--line);
 		border-radius: 999px;
 		padding: 0.05rem 0.55rem;
 		background: var(--paper);
+		transition:
+			color 150ms ease,
+			border-color 150ms ease;
+	}
+
+	.article-tags a:hover {
+		color: var(--amber-deep);
+		border-color: var(--amber);
 	}
 </style>
