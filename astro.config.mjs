@@ -19,10 +19,17 @@ export default defineConfig({
 		react(),
 	],
 
-	// Cloudflare 适配器:Cloudflare Pages 部署环境
+	// 开云适配器:Cloudflare Pages 部署环境
 	// 站点为纯静态输出(output 默认 'static'),所有页面在构建期预渲染为 HTML;
 	// 未来接入 Supabase 需要服务端能力(SSR / API 路由)时,基于本适配器即可渐进启用。
 	adapter: cloudflare(),
+
+	// 开发服务器:监听全部网络接口(0.0.0.0)——localhost / 127.0.0.1 / 局域网 IP /
+	// VPN 虚拟网卡 IP 均可访问;开启 VPN 系统代理导致 localhost 被拦截时,可改用本机 IP 访问
+	server: {
+		host: true,
+		port: 4321,
+	},
 
 	vite: {
 		resolve: {
