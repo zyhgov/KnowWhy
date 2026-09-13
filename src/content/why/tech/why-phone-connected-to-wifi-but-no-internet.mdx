@@ -1,0 +1,70 @@
+
+---
+id: "WHY.0028"
+title: "为什么手机连上 Wi-Fi 却显示无法访问互联网？"
+slug: "why-phone-connected-to-wifi-but-no-internet"
+authors: ["zyhorg"]
+category: "tech"
+tags: ["Wi-Fi", "DHCP", "DNS解析", "NCSI", "Captive Portal"]
+date: 2026-09-13
+status: "published"
+sources:
+  - name: "Cisco Community - Wifi Connected no internet access"
+    url: "https://community.cisco.com/t5/wireless/wifi-connected-no-internet-access/td-p/4625999"
+  - name: "Microsoft Learn - Network Connectivity Status Indicator (NCSI) overview"
+    url: "https://learn.microsoft.com/en-us/windows-server/networking/ncsi/ncsi-overview"
+  - name: "Ars Technica - WiFi connectivity and Captive Portal Detection"
+    url: "https://arstechnica.com/civis/threads/wifi-connectivity-under-ios-6-temporarily-broken-by-server-problem.1182998/page-3"
+  - name: "Ars Technica - Android Captive Portal Triggers"
+    url: "https://arstechnica.com/civis/threads/android-sends-20x-more-data-to-google-than-ios-sends-to-apple-study-says.1475438/page-3"
+  - name: "Microsoft Learn - NCSI Active Probing and Troubleshooting"
+    url: "https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/internet-explorer-edge-open-connect-corporate-public-network"
+ogImage: ""
+related: []
+---
+
+
+手机连上 Wi-Fi 却显示无法访问互联网，根本原因在于“连上 Wi-Fi”仅仅意味着手机与路由器之间建立了局部的无线局域网（LAN）连接，但这并不等同于成功接入了外部的广域网（WAN），中间任何一个环节（如IP分配、DNS解析或上游宽带中断）的阻断，都会导致“有信号却无网络”的现象。
+
+## 走进小区不等于走向世界：局域网与广域网的鸿沟
+
+要理解这个现象，必须打破一个直觉上的误区：Wi-Fi 图标亮起，并不代表你已经连接到了全世界。
+
+Wi-Fi 本质上只是手机和路由器之间的一根“无形网线”。当你输入密码连上 Wi-Fi 时，你只是成功进入了这个家庭的“内部局域网小区”。如果你想要访问互联网（比如打开一个网页），你的数据包必须先交给路由器，再由路由器通过光猫和运营商的骨干网转发到外部的服务器。如果路由器自己都没有网，或者小区内部的交通瘫痪了，你的手机自然就会显示“无法访问互联网”。
+
+## 导致“断联”的四大微观路障
+
+从手机连上 Wi-Fi 到成功打开网页，需要经历严密的握手协议，以下四个环节任何一个出错，都会导致网络中断：
+
+### 1. DHCP 分配失败：拿不到局域网的“门牌号”
+手机连上 Wi-Fi 后的第一件事，是向路由器申请一个局域网 IP 地址（这个过程叫 DHCP）。如果路由器的 DHCP 服务死机，或者连接的设备太多导致“地址池”耗尽，手机就拿不到合法的 IP。此时，手机操作系统会无奈地给自己分配一个以 `169.254` 开头的无效保留地址（APIPA）。拿着这个假地址，手机连路由器的大门都敲不开，更别提上网了。
+
+### 2. DNS 解析瘫痪：丢失了互联网的“导航仪”
+如果你发现微信能正常收发文字消息，但浏览器却打不开任何网页，这通常是 DNS（域名系统）出了问题。DNS 的作用是把人类能看懂的网址（如 `www.apple.com`）翻译成机器能看懂的 IP 地址。如果路由器的 DNS 设置错误，或者运营商的 DNS 服务器宕机，手机就会像失去了导航仪的汽车，虽然引擎（网络通道）是好的，但根本不知道目的地在哪里。
+
+### 3. 上游网络中断：路由器沦为“信息孤岛”
+这是最常见的情况。路由器的 Wi-Fi 发射模块工作完全正常，但它的 WAN 口并没有从光猫那里获取到公网 IP。可能是因为宽带欠费、光纤被挖断，或者光猫死机。此时，路由器就像一个与外界切断了所有联系的孤岛，手机连上了孤岛，自然无法访问岛外的世界。
+
+### 4. Captive Portal 拦截：公共网络的“强制收费站”
+在酒店、机场或星巴克，连上 Wi-Fi 后通常会弹出一个要求输入手机号或点击“同意”的网页。这种机制被称为强制门户（Captive Portal）。路由器在底层拦截了你所有的网络请求，强制将其重定向到认证页面。在完成认证前，你的手机系统会敏锐地察觉到这种“劫持”，从而提示你“无法访问互联网”或弹出登录窗口。
+
+## 手机是如何“察觉”到自己没网的？
+
+很多人好奇，手机是怎么知道当前网络通不通的？难道它每秒钟都在尝试打开百度吗？
+
+其实，无论是苹果 iOS、安卓 Android 还是 Windows 系统，内部都运行着一套名为“网络连接状态指示器”（NCSI）或 Captive Portal Detection 的后台探针机制。
+
+> “当设备连接到网络时，系统会在后台默默向一个特定的、极小的无缓存服务器地址发送 HTTP 请求，通过返回的状态码来判断网络的真实连通性。”
+
+* **Android 设备**：通常会向 `connectivitycheck.gstatic.com/generate_204` 发送请求。如果服务器返回 HTTP 204（No Content）状态码，安卓就认为网络畅通；如果返回其他代码或超时，Wi-Fi 图标上就会出现一个小小的“感叹号”。
+* **Apple 设备**：会尝试访问 `captive.apple.com/hotspot-detect.html`。如果返回的是包含“Success”字样的特定 HTML 页面，iOS 就确认网络正常；如果被重定向到了其他网页，iOS 就会判定遇到了 Captive Portal，并自动弹出认证窗口。
+
+### Wi-Fi 故障表现与底层原因对照表
+
+| 故障表现 | 核心原因 | 常见场景 | 快速排查思路 |
+| :--- | :--- | :--- | :--- |
+| **Wi-Fi 图标带感叹号/提示无网络** | NCSI 探针请求失败或遭遇重定向 | 酒店/机场未认证、宽带欠费、光猫断网 | 尝试打开浏览器访问任意网页，看是否弹出认证页 |
+| **能发微信文字，打不开网页/图片** | DNS 解析服务器故障或污染 | 运营商 DNS 宕机、路由器 DNS 设置错误 | 手动将手机或路由器的 DNS 改为 `8.8.8.8` 或 `114.114.114.114` |
+| **手机显示已连接，但获取不到 IP** | DHCP 服务失效或地址池耗尽 | 路由器长时间未重启、连接设备过多 | 重启路由器，或在手机端选择“忽略此网络”后重连 |
+
+弄明白了这个机制，你就能看懂一些关于公共 Wi-Fi 安全的冷知识了。由于手机系统判断网络是否连通，仅仅依赖于后台探针是否收到了预期的“204”或“Success”响应，一些恶意的黑客设备（如伪基站或钓鱼路由器）会故意拦截你的探针请求，并伪造一个完美的“204”响应返回给你的手机。这会让你的手机系统误以为网络畅通无阻，从而乖乖地将后续所有的账号密码和隐私数据，毫无防备地发送给黑客。下次在公共场所连上免密 Wi-Fi 时，如果系统没有弹出任何认证页面就显示“已连接”，不妨多一份警惕，因为那可能正是黑客为你精心伪造的“网络海市蜃楼”。

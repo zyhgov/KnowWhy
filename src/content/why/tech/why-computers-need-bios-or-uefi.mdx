@@ -1,0 +1,62 @@
+
+---
+id: "WHY.0025"
+title: "为什么电脑主板上必须固化 BIOS 或 UEFI 固件？"
+slug: "why-computers-need-bios-or-uefi"
+authors: ["zyhorg"]
+category: "tech"
+tags: ["BIOS", "UEFI", "固件", "POST", "引导加载"]
+date: 2026-09-13
+status: "published"
+sources:
+  - name: "UEFI Forum - Specifications"
+    url: "https://uefi.org/specifications"
+  - name: "Microsoft Learn - Firmware Attack Surface Reduction"
+    url: "https://learn.microsoft.com/en-us/windows-hardware/drivers/bringup/firmware-attack-surface-reduction"
+  - name: "Coreboot - Open Source Firmware"
+    url: "https://www.coreboot.org/"
+  - name: "Computer History Museum - Gary Kildall and the BIOS"
+    url: "https://computerhistory.org/blog/gary-kildall-40th-anniversary-of-the-birth-of-the-pc-operating-system/"
+  - name: "Coreboot Documentation - FAQ"
+    url: "https://doc.coreboot.org/getting_started/faq.html"
+ogImage: ""
+related: []
+---
+
+
+电脑必须依赖 BIOS 或 UEFI，是因为 CPU 在刚通电的瞬间是“盲目”的，它必须依靠固化在主板 ROM 芯片上的这段底层固件来完成硬件加电自检（POST）、初始化核心组件，并最终将控制权安全移交给操作系统。
+
+## CPU的“第一声啼哭”与硬件唤醒
+
+要理解固件的必要性，我们需要观察按下电源键后最初几毫秒内发生的微观物理事件。
+
+### 复位向量与ROM中的代码
+当电源向主板输送稳定的电压后，CPU 会从一个硬编码的物理地址（称为“复位向量”）开始执行第一条指令。由于此时内存（RAM）尚未通电初始化，CPU 无法从硬盘或内存中读取任何数据。因此，这条指令必须指向主板上那块不需要依赖内存就能直接读取的非易失性芯片——也就是存放 BIOS 或 UEFI 固件的 ROM（只读存储器）。
+
+固件接管控制权后，立刻启动“加电自检”（POST），依次唤醒主板上的关键硬件：
+1. **内存训练**：检测并初始化内存条的时序与容量。
+2. **外设枚举**：通过 PCIe 和 USB 总线扫描显卡、网卡及存储设备。
+3. **中断分配**：为各个硬件分配中断请求（IRQ）与内存映射地址。
+
+## 从 BIOS 到 UEFI：打破 1MB 的历史枷锁
+
+早期的 BIOS（Basic Input/Output System）诞生于上世纪 70 年代末的 CP/M 操作系统时期，随后被 IBM PC 发扬光大。它本质上是一段 16 位的实模式代码，运行在极其受限的 1MB 寻址空间内。随着现代计算机硬件的爆炸式发展，传统 BIOS 已经成为严重的性能与安全瓶颈。
+
+> “UEFI 论坛通过行业协作倡导标准化的接口，以简化并保护现代平台的固件创新。”
+
+为了彻底解决 BIOS 的局限，英特尔主导开发了 UEFI（统一可扩展固件接口），并交由 UEFI 论坛进行行业推广。
+
+| 核心维度 | 传统 BIOS | 现代 UEFI |
+| :--- | :--- | :--- |
+| **运行模式** | 16位实模式（1MB内存限制） | 32位或64位保护模式 |
+| **分区格式** | 仅支持 MBR（最大 2TB 硬盘） | 支持 GPT（支持超大容量硬盘） |
+| **用户界面** | 纯键盘操作的蓝底白字文本 | 支持鼠标操作的图形化界面（GUI） |
+| **安全机制** | 缺乏底层验证，易受引导区病毒攻击 | 支持“安全启动”（Secure Boot），校验OS签名 |
+
+## 操作系统的“交接仪式”
+
+当 UEFI 完成所有硬件的初始化后，它会进入引导阶段。与传统 BIOS 盲目读取硬盘第一个扇区（MBR）不同，UEFI 会在硬盘中寻找一个专门的 FAT32 格式分区——EFI 系统分区（ESP）。
+
+在这个分区里，UEFI 会读取操作系统的引导加载程序（如 Windows Boot Manager 或 GRUB）。在将控制权交出之前，UEFI 还会执行一项至关重要的安全校验：它会检查引导程序的数字签名，确保其没有被恶意篡改。只有校验通过，UEFI 才会彻底退出历史舞台，将 CPU 的最高权限（Ring 0）移交给操作系统内核。
+
+弄明白了这个机制，你可能会对极客圈里流行的“Coreboot”项目产生兴趣。由于传统的 BIOS/UEFI 固件通常是闭源的，且包含了大量不透明的“二进制微码”，一些开源社区开发者发起了 Coreboot 项目，试图用极简、透明的开源代码重写这段底层固件，以实现真正的“闪电开机”和绝对的硬件掌控权。下次当你按下开机键，看着屏幕上闪过主板品牌的 LOGO 时，不妨想一想，这几秒钟的画面背后，其实是主板上那颗指甲盖大小的 ROM 芯片，正在以极高的权限完成一场从硅片唤醒到生态交接的宏大仪式。
