@@ -9,7 +9,7 @@ const year = new Date().getFullYear();
 		<div class="footer-grid">
 			<div class="footer-about">
 				<a class="footer-logo" href="/">
-					<img src="/kw-logo-白色.svg" alt="" width="42" height="28" />
+					<img src="/kw-logo-白色.svg" alt={SITE.name} width="42" height="28" />
 					<span>{SITE.name} | {SITE.nameZh}</span>
 				</a>
 				<p class="footer-desc">用一个「为什么」探索世界——知其然,更要知其所以然。</p>
@@ -62,7 +62,7 @@ const year = new Date().getFullYear();
 	</div>
 
 	{/* 装饰:吉祥物「小问」——绝对定位站在右下角侧边空白区,不参与布局(见样式注释) */}
-	<img class="footer-mascot" src="/mascot/Mascot-Thumbs-Up.png" alt="" aria-hidden="true" />
+	<img class="footer-mascot" src="/mascot/Mascot-Thumbs-Up.png" alt="小问竖起大拇指" />
 </footer>
 
 <style>

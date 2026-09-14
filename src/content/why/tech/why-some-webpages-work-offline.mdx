@@ -1,0 +1,68 @@
+
+---
+id: "WHY.0038"
+title: "为什么断网后，有些网页仍然可以继续使用？"
+slug: "why-some-webpages-work-offline"
+authors: ["zyhorg"]
+category: "tech"
+tags: ["Service Worker", "PWA", "离线优先", "IndexedDB", "浏览器缓存"]
+date: 2026-09-14
+status: "published"
+sources:
+  - name: "MDN Web Docs - Offline and background operation"
+    url: "https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Offline_and_background_operation"
+  - name: "MDN Web Docs - Using Service Workers"
+    url: "https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers"
+  - name: "MDN Web Docs - Progressive web apps"
+    url: "https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps"
+  - name: "MDN Web Docs - IndexedDB API"
+    url: "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API"
+  - name: "web.dev - Common techniques to build offline applications"
+    url: "https://web.dev/articles/offline-cookbook"
+  - name: "MDN Web Docs - Storage quotas and eviction criteria"
+    url: "https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria"
+ogImage: ""
+related: []
+---
+
+
+断网后某些网页依然可以继续使用，根本原因在于现代 Web 技术（如 PWA 架构）改变了网页的运行逻辑：通过 **Service Worker** 拦截网络请求并结合 **IndexedDB** 本地数据库，网页从“每次都必须向服务器请求的远程文档”，变成了一个提前将代码和数据下载到本地浏览器沙盒中运行的“伪本地应用”。
+
+## Service Worker：浏览器底层的“网络拦截者”
+
+在传统的 Web 模式中，网页的每一次点击、每一张图片的加载，都必须实时向远端服务器发起 HTTP 请求。一旦断开网络，请求失败，浏览器就会直接抛出“无法连接到网络”的白屏或错误页面。
+
+### 代理与拦截机制
+现代支持离线的网页（通常被称为渐进式 Web 应用，PWA），在你首次访问并加载完毕后，会在浏览器后台偷偷注册一个名为 **Service Worker** 的 JavaScript 脚本。
+
+这个脚本独立于网页的主线程运行，它扮演着一个“本地代理服务器”的角色。当你在断网状态下点击网页上的链接时，Service Worker 会立刻拦截这个网络请求。它不会让请求直接发向断开的网卡，而是转身向浏览器内部的 **Cache API**（缓存存储）索要数据，并将提前存好的 HTML、CSS 和图片返回给页面，从而完美“欺骗”网页，让它以为自己依然连着网。
+
+## 本地数据库：让状态与数据“离线生存”
+
+如果 Service Worker 解决了“页面壳子”的显示问题，那么用户在断网时输入的数据（比如编辑到一半的文档、勾选的待办事项）存在哪里呢？
+
+### 从 LocalStorage 到 IndexedDB 的进化
+早期的网页只能使用 `LocalStorage` 来保存少量数据，但它的容量被严格限制在 5MB 左右，且只能存储简单的字符串，根本无法支撑复杂的离线应用。
+
+为了解决这个问题，现代浏览器引入了 **IndexedDB**。这是一个内置在浏览器底层的 NoSQL 数据库，它允许网页在用户的硬盘上持久化存储海量的结构化数据，甚至包括文件和 Blob 对象。
+
+> “IndexedDB 的核心设计目标之一，就是允许在客户端存储大量数据以支持离线使用场景。”
+
+当你在断网的网页上点击“保存”或“发送”时，数据实际上被写入了本地的 IndexedDB 中。网页会通过一种名为“后台同步”（Background Sync）的机制监听网络状态，一旦设备重新连上 Wi-Fi，Service Worker 就会在后台悄悄唤醒，将积压在 IndexedDB 里的数据打包发送给服务器。
+
+## 传统网页与离线优先（Offline-First）网页的架构对比
+
+为了更直观地理解这种差异，我们可以对比两种截然不同的 Web 设计哲学：
+
+| 核心维度 | 传统 Web 架构（Network-First） | 现代离线 Web 架构（Offline-First） |
+| :--- | :--- | :--- |
+| **页面加载逻辑** | 每次向服务器请求最新的 HTML 和数据 | 优先从本地 Cache API 读取，后台静默更新 |
+| **断网时的表现** | 请求超时，显示浏览器默认的“断网错误页” | Service Worker 拦截请求，返回本地缓存的 UI 骨架 |
+| **用户数据存储** | 依赖服务器数据库，断网无法提交 | 写入本地 IndexedDB，联网后通过后台同步上传 |
+| **典型应用场景** | 新闻门户、传统企业官网、在线视频流 | 离线笔记、在线文档、邮件客户端、PWA 工具 |
+
+## 为什么断网后有些操作依然会失败？
+
+弄明白了这个机制，你可能会产生一个疑问：既然网页能离线运行，为什么我在断网时给某篇文章“点赞”或“发表评论”，网页还是会提示失败？
+
+这是因为 Service Worker 只能缓存“静态资源”和“预设数据”。对于需要服务器进行严格逻辑校验、防刷控制或涉及资金变动的 API 接口（如支付、发帖），网页无法在本地伪造服务器的确认回执。为了优化这种体验，现代前端开发会采用“乐观 UI”（Optimistic UI）设计——在断网时先在界面上假装操作成功（比如红心立刻亮起），把请求存入本地队列，等联网后如果服务器返回“操作违规”或“失败”，再在界面上将状态回滚并通知用户。下次当你在高铁穿过隧道、手机完全失去信号的几十秒里，依然能流畅地滑动网页、阅读缓存好的文章时，不妨感受一下浏览器底层那个默默拦截着所有错误请求的 Service Worker，它正用几行 JavaScript 代码，为你维系着一个永不掉线的数字幻境。

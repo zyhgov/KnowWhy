@@ -411,3 +411,16 @@
 - 技术选型:导航栏是全站组件,不引入 GSAP(仅首页按需加载,若用于导航栏会让所有页面背 119KB 包);效果本质为「字符独立遮罩 + 上推 + 错峰」,纯 CSS 复刻,零新增依赖。
 - 实现(`Header.astro`):① 模板把两个品牌名拆成逐字符结构(每字外层遮罩 span + 内层滑动 span,内联 `--d: i*40ms` 错峰变量;英文按 split、中文按 spread 拆分);② CSS 动画从「整词滑动」(`.brand-item`)下移到字符层(`.brand-char > span`),keyframes 改名 `brand-char-swap`(位移 115% 不变);③ 加 `both` 填充模式,避免正延迟字符在延迟期间闪现;④ 中文名 `calc(-2.7s + var(--d))` 整体错开半周期并保留逐字错峰;⑤ reduced-motion 时停播改字符层控制,仅英文名常显(避免中英重叠)。
 - 验证:`npm run build` 一次通过(46 页,11.09s);产物抽查——首页 HTML 含 12 个 `brand-char` 拆字结构与内联 `--d:`;共享 CSS 含 `brand-char-swap`/`var(--d)`/`-2.7s`/reduced-motion 降级。
+
+## 2026-09-14
+
+### 10:40 - dev server 改为监听全部网卡(VPN/代理环境访问修复)
+- 需求:开启 VPN 代理后 dev(4321 端口)无法访问,要求全部网络均可访问。
+- 修改:`astro.config.mjs` 新增 `server: { host: true, port: 4321 }`——dev server 监听 0.0.0.0,localhost / 127.0.0.1 / 局域网 IP / VPN 虚拟网卡 IP 均可访问。
+- 验证:随本次构建一并生效(`npm run build` 71 页通过);dev 需重启后生效。
+
+### 10:47 - 全站图片 alt 补全(Bing 站长工具空 alt 告警修复)
+- 现象:Bing 站长工具报告大量图片缺少 alt;排查确认文章配图 alt 齐全,问题集中在模板组件。
+- 全站清点:21 处 `<img>` 中 3 处空 alt——① `AuthorInline.astro` 内联作者头像(WhyCard/KnowCard 每张卡片都有,是 Bing 报「很多」的主因);② `Footer.astro` 白色 logo;③ `Footer.astro` 页脚吉祥物(原 `alt=""` + aria-hidden)。
+- 修复:作者头像 `alt={author.name}`(与 ArticleHead 一致);页脚 logo `alt={SITE.name}`;页脚吉祥物补 `alt="小问竖起大拇指"` 并移除 aria-hidden(有语义 alt 后无需对辅助技术隐藏)。
+- 验证:构建后全量扫描产物——72 个页面 397 张 img,空 alt 归零;页脚 logo/吉祥物、列表页 29 个作者头像 alt 全部非空。
