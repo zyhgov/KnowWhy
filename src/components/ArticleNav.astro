@@ -1,0 +1,119 @@
+---
+/*
+ * 文章底部"上一篇 / 下一篇"导航:在所属板块(why / know / news)已发布内容中按发布时间取相邻条目。
+ * 约定:上一篇 = 发布时间更早的一篇,下一篇 = 发布时间更晚的一篇;
+ * 处于板块最新/最早一篇时对应一侧自动留空。由各详情页在 getStaticPaths 中排序后传入。
+ */
+export interface ArticleNavItem {
+	/** 文章编号(如 WHY.0001 / KNOW.0001;站点新闻无编号,可省略) */
+	id?: string;
+	title: string;
+	href: string;
+}
+
+interface Props {
+	/** 上一篇(发布时间更早) */
+	prev?: ArticleNavItem;
+	/** 下一篇(发布时间更晚) */
+	next?: ArticleNavItem;
+}
+
+const { prev, next } = Astro.props;
+---
+
+{
+	(prev || next) && (
+		<nav class="article-nav" aria-label="上一篇与下一篇">
+			{prev ? (
+				<a class="article-nav-link prev" href={prev.href} rel="prev">
+					<span class="article-nav-label">
+						<span aria-hidden="true">←</span> 上一篇
+					</span>
+					<span class="article-nav-title">{prev.id ? `${prev.id}・` : ''}{prev.title}</span>
+				</a>
+			) : (
+				<span class="article-nav-empty" aria-hidden="true" />
+			)}
+			{next ? (
+				<a class="article-nav-link next" href={next.href} rel="next">
+					<span class="article-nav-label">
+						下一篇 <span aria-hidden="true">→</span>
+					</span>
+					<span class="article-nav-title">{next.id ? `${next.id}・` : ''}{next.title}</span>
+				</a>
+			) : (
+				<span class="article-nav-empty" aria-hidden="true" />
+			)}
+		</nav>
+	)
+}
+
+<style>
+	/* 线性翻页导航:左"上一篇"、右"下一篇";缺省侧保留空位以维持方位;较窄屏改为上下堆叠 */
+	.article-nav {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.75rem;
+		margin-top: 2.75rem;
+		padding-top: 1.5rem;
+		border-top: 1px solid var(--line);
+	}
+
+	.article-nav-link {
+		display: grid;
+		gap: 0.35rem;
+		min-width: 0;
+		padding: 0.85rem 1rem;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-md);
+		background: var(--paper);
+		transition: border-color 150ms ease;
+	}
+
+	.article-nav-link:hover {
+		border-color: var(--amber);
+	}
+
+	.article-nav-label {
+		font-size: 0.78rem;
+		letter-spacing: 0.02em;
+		color: var(--text-muted);
+	}
+
+	.article-nav-title {
+		display: -webkit-box;
+		overflow: hidden;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		font-size: 0.94rem;
+		font-weight: 500;
+		line-height: 1.55;
+		color: var(--ink);
+	}
+
+	.article-nav-link:hover .article-nav-title {
+		color: var(--amber-deep);
+	}
+
+	.article-nav-link.next {
+		justify-items: end;
+		text-align: right;
+	}
+
+	@media (max-width: 640px) {
+		.article-nav {
+			grid-template-columns: 1fr;
+		}
+
+		.article-nav-link.next {
+			justify-items: start;
+			text-align: left;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.article-nav-link {
+			transition: none;
+		}
+	}
+</style>

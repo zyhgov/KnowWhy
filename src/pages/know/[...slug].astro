@@ -5,25 +5,34 @@ import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ArticleHead from '../../components/ArticleHead.astro';
 import ArticleToc from '../../components/ArticleToc.astro';
+import ArticleNav from '../../components/ArticleNav.astro';
 import ArticleRelated from '../../components/ArticleRelated.astro';
+import ArticleShare from '../../components/ArticleShare.astro';
 import ArticleJsonLd from '../../components/ArticleJsonLd.astro';
 import { getCategory, getAuthor } from '../../consts';
-import { getKnowHref } from '../../utils';
+import { byNewest, getKnowHref } from '../../utils';
 
 // 为所有已发布的 KNOW 知识点生成详情页:/know/<slug>/
 export const getStaticPaths = (async () => {
-	const entries = await getCollection('know', ({ data }) => data.status === 'published');
-	return entries.map((entry) => ({
+	const entries = (await getCollection('know', ({ data }) => data.status === 'published')).sort(
+		byNewest,
+	);
+	return entries.map((entry, index) => ({
 		params: { slug: entry.id },
-		props: { entry },
+		// 上一篇/下一篇:板块内按发布时间取相邻(排序新在前,index+1 更早、index-1 更晚,首末自动缺省)
+		props: { entry, prevEntry: entries[index + 1], nextEntry: entries[index - 1] },
 	}));
 }) satisfies GetStaticPaths;
 
 interface Props {
 	entry: CollectionEntry<'know'>;
+	/** 上一篇(发布时间更早);板块最早一篇时为 undefined */
+	prevEntry?: CollectionEntry<'know'>;
+	/** 下一篇(发布时间更晚);板块最新一篇时为 undefined */
+	nextEntry?: CollectionEntry<'know'>;
 }
 
-const { entry } = Astro.props;
+const { entry, prevEntry, nextEntry } = Astro.props;
 const { data } = entry;
 const { Content, headings } = await render(entry);
 
@@ -82,6 +91,8 @@ const authorNames = data.authors.map((key) => getAuthor(key)?.name ?? key);
 			<Content />
 		</div>
 
+		<ArticleShare title={data.title} />
+
 		{
 			data.sources && data.sources.length > 0 && (
 				<section class="article-section">
@@ -115,6 +126,15 @@ const authorNames = data.authors.map((key) => getAuthor(key)?.name ?? key);
 				</section>
 			)
 		}
+
+		<ArticleNav
+			prev={prevEntry
+				? { id: prevEntry.data.id, title: prevEntry.data.title, href: getKnowHref(prevEntry) }
+				: undefined}
+			next={nextEntry
+				? { id: nextEntry.data.id, title: nextEntry.data.title, href: getKnowHref(nextEntry) }
+				: undefined}
+		/>
 
 		<ArticleRelated currentId={data.id} />
 	</article>

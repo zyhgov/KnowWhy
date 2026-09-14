@@ -424,3 +424,25 @@
 - 全站清点:21 处 `<img>` 中 3 处空 alt——① `AuthorInline.astro` 内联作者头像(WhyCard/KnowCard 每张卡片都有,是 Bing 报「很多」的主因);② `Footer.astro` 白色 logo;③ `Footer.astro` 页脚吉祥物(原 `alt=""` + aria-hidden)。
 - 修复:作者头像 `alt={author.name}`(与 ArticleHead 一致);页脚 logo `alt={SITE.name}`;页脚吉祥物补 `alt="小问竖起大拇指"` 并移除 aria-hidden(有语义 alt 后无需对辅助技术隐藏)。
 - 验证:构建后全量扫描产物——72 个页面 397 张 img,空 alt 归零;页脚 logo/吉祥物、列表页 29 个作者头像 alt 全部非空。
+
+### 17:27 - 分页升级为窗口式(全站 5 处统一)
+- 需求:/tags/ 分页罗列全部页码(376 组标签=38 页,38 个按钮全排开),要求改为经典分页:一页页翻、首末页直达、页码选择跳转;所有有分页的地方统一。
+- 新建 `src/scripts/pager.ts` 共享分页构建器:`buildPager()` 输出「首页 | 上一页 | 页码窗口(1 … 4 [5] 6 … 38) | 下一页 | 末页 | 第 N 页下拉选择」;`pageWindow()` 总页数 ≤7 全显、否则保留首末页 + 当前页±1 折叠省略号;首/末页时对应按钮禁用。
+- 接入三脚本(覆盖 5 页面):tag-browser(/tags/)、source-browser(/sources/)、entries-browser(/why/ /know/ /news/)——各删除本地重复的全量页码循环,统一调 buildPager(Vite 自动拆为共享 chunk `pager.*.js`)。
+- `global.css` 补样式:省略号 `.pager-dots`、跳转下拉 `.entries-pager select`、禁用态 `button:disabled`(opacity .45),原 hover 改 `:not(:disabled)` 避免禁用态变色反馈。
+- 验证:`npm run build` 一次通过(103 页,33.43s);产物——共享 chunk 含 pager-dots/pager-jump,共享 CSS 含 not(:disabled)/button:disabled/.entries-pager select;tags 内嵌数据 376 组=38 页(与用户所见 1~38 吻合)。
+
+### 17:31 - 文章页新增「上一篇 / 下一篇」导航(why / know / news 三板块)
+- 需求:why、know、站点新闻三个板块的文章详情页底部增加「上一篇 / 下一篇」点击跳转。
+- 约定:上一篇 = 发布时间更早的一篇、下一篇 = 发布时间更晚的一篇;板块最新一篇无「下一篇」、最早一篇无「上一篇」,缺省侧留空位保持左右方位;why/know 跨分类全板块连续(同一板块内连续切页,不按分类切分)。
+- 新建 `src/components/ArticleNav.astro` 共享组件:双卡片布局(左「← 上一篇」右「下一篇 →」,边框圆角、悬停琥珀色),条目带编号(`WHY.0001・标题`)、两行截断;窄屏(<640px)上下堆叠;输出 rel=prev/next 与 aria-label。
+- 三详情页接入:排序在 `getStaticPaths` 内完成(why/know 复用 `byNewest`,news 无编号按日期倒序+文件 id 稳定排序),`props` 直接带出 `prevEntry`(index+1)/`nextEntry`(index-1),页面组件零额外查询;位置在「相关阅读」之后、「相关内容」(随机推荐)之前。
+- 验证:`npm run build` 一次通过(103 页,10.25s);产物——84 篇文章页全部含导航;边界精确:各板块最新一篇(why-people-regret-decisions / subway-tunnel-ventilation-system / 2026-09-12-meet-xiaowen)仅「上一篇」,最早一篇(why-airplane-windows-round / microwave-door-mesh / site-launch)仅「下一篇」;news 两条互链、why 首末指向次邻均正确。
+
+### 17:50 - 文章页新增「分享本篇」工具条(why / know / news 三板块)
+- 需求:三个板块文章详情页增加分享——链接复制、二维码分享、微信、QQ、微博、X、Instagram、Reddit;平台彩色 logo 由用户提供于 `public/fenxiang-icon`。
+- 新建 `src/scripts/article-share.ts`:复制走 `navigator.clipboard`(失败回退 textarea+execCommand);二维码在点击时才 `import('uqr')` 动态加载生成当前页 SVG 并缓存;QQ/微博/X/Reddit 新窗口打开平台分享页;Instagram 无网页分享入口,改为复制链接+toast 提示;Escape/遮罩/关闭按钮均可关闭浮层;文件末尾加 `export {}` 成为模块,避免与其它全局脚本(如 related-random.ts)顶层变量冲突。
+- 新建 `src/components/ArticleShare.astro`:8 个圆形图标按钮(复制/二维码/关闭为 reicon-react 线性图标内嵌 SVG,平台彩色 logo 取自 `public/fenxiang-icon`);二维码/微信弹出居中浮层(hidden 切换+入场动画,reduced-motion 降级);复制与 Instagram 反馈底部 toast;分享文案以 props 传入纯标题(缺省回退 document.title)。
+- 三模板接入:why/know 位于正文后、参考来源前;news 位于正文后、上下篇导航前。`global.css` 补 `.share-qr svg` 全局规则(二维码为运行时注入的动态 SVG,无 scoped 属性,scoped 样式不生效)。
+- 依赖:新增 `uqr`(运行时二维码生成,按需加载)。
+- 验证:`npm run build` 一次通过(103 页,11.45s);产物——84 篇文章页全部含分享组件与图标引用;三板块代表页 19 项标记(8 按钮/6 图标/浮层/toast/脚本)齐全;uqr 拆为独立 chunk `dist.CVuhE9lw.js`(10.4KB),仅点击二维码/微信时动态加载,HTML 零静态引用;`.share-qr svg` 进入 BaseLayout CSS;`dist/client/fenxiang-icon/` 六个图标资源就位。

@@ -8,6 +8,8 @@
  * - 状态行 [data-source-status]、列表容器 [data-source-list]、分页容器 [data-pager]
  */
 
+import { buildPager } from './pager';
+
 interface SourceLink {
 	name: string;
 	url: string;
@@ -79,7 +81,7 @@ if (browserEl) {
 		return article;
 	}
 
-	/** 重建分页按钮(样式复用归档页 .entries-pager) */
+	/** 重建分页控件(窗口式:首页/上下页/页码窗口/末页 + 页码选择跳转) */
 	function renderPager(): void {
 		if (!pagerEl) return;
 		const pages = totalPages();
@@ -88,22 +90,7 @@ if (browserEl) {
 			pagerEl.replaceChildren();
 			return;
 		}
-
-		const makeButton = (label: string, target: number, current: boolean): HTMLButtonElement => {
-			const button = document.createElement('button');
-			button.type = 'button';
-			button.textContent = label;
-			if (current) button.setAttribute('aria-current', 'page');
-			button.addEventListener('click', () => goToPage(target));
-			return button;
-		};
-
-		const nodes: HTMLButtonElement[] = [makeButton('上一页', page - 1, false)];
-		for (let target = 1; target <= pages; target += 1) {
-			nodes.push(makeButton(String(target), target, target === page));
-		}
-		nodes.push(makeButton('下一页', page + 1, false));
-		pagerEl.replaceChildren(...nodes);
+		pagerEl.replaceChildren(buildPager({ page, totalPages: pages, onGo: goToPage }));
 	}
 
 	/** 渲染当前页(列表 + 状态 + 分页) */

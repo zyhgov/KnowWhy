@@ -11,6 +11,8 @@
  * - 分页容器 [data-pager]、状态文字 [data-page-status]
  */
 
+import { buildPager } from './pager';
+
 // v3:默认视图按页面 data-default-view 区分,与 v2 键区分(旧值默认语义不同)
 const VIEW_KEY = 'knowwhy:entries-view-v3';
 
@@ -56,26 +58,12 @@ function setupBrowser(root: HTMLElement): void {
 		}
 	}
 
+	/** 重建分页控件(窗口式:首页/上下页/页码窗口/末页 + 页码选择跳转) */
 	function renderPager(): void {
 		if (!pager) return;
 		pager.hidden = totalPages <= 1;
 		if (totalPages <= 1) return;
-
-		const makeButton = (label: string, target: number, current: boolean): HTMLButtonElement => {
-			const button = document.createElement('button');
-			button.type = 'button';
-			button.textContent = label;
-			if (current) button.setAttribute('aria-current', 'page');
-			button.addEventListener('click', () => goTo(target));
-			return button;
-		};
-
-		const nodes: HTMLButtonElement[] = [makeButton('上一页', page - 1, false)];
-		for (let target = 1; target <= totalPages; target += 1) {
-			nodes.push(makeButton(String(target), target, target === page));
-		}
-		nodes.push(makeButton('下一页', page + 1, false));
-		pager.replaceChildren(...nodes);
+		pager.replaceChildren(buildPager({ page, totalPages, onGo: goTo }));
 	}
 
 	function applyPage(): void {

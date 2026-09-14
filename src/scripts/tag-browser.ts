@@ -9,6 +9,8 @@
  * - 分组容器 [data-tag-groups]、空态 [data-tag-empty]、分页容器 [data-pager]
  */
 
+import { buildPager } from './pager';
+
 interface TagItem {
 	type: 'why' | 'know' | 'news';
 	/** 编号(新闻无编号,不显示) */
@@ -107,7 +109,7 @@ if (browserEl) {
 		return article;
 	}
 
-	/** 重建分页按钮(样式复用归档页 .entries-pager) */
+	/** 重建分页控件(窗口式:首页/上下页/页码窗口/末页 + 页码选择跳转) */
 	function renderPager(): void {
 		if (!pagerEl) return;
 		const pages = totalPages();
@@ -116,22 +118,7 @@ if (browserEl) {
 			pagerEl.replaceChildren();
 			return;
 		}
-
-		const makeButton = (label: string, target: number, current: boolean): HTMLButtonElement => {
-			const button = document.createElement('button');
-			button.type = 'button';
-			button.textContent = label;
-			if (current) button.setAttribute('aria-current', 'page');
-			button.addEventListener('click', () => goToPage(target));
-			return button;
-		};
-
-		const nodes: HTMLButtonElement[] = [makeButton('上一页', page - 1, false)];
-		for (let target = 1; target <= pages; target += 1) {
-			nodes.push(makeButton(String(target), target, target === page));
-		}
-		nodes.push(makeButton('下一页', page + 1, false));
-		pagerEl.replaceChildren(...nodes);
+		pagerEl.replaceChildren(buildPager({ page, totalPages: pages, onGo: goToPage }));
 	}
 
 	/** 更新状态行(搜索时显示匹配数) */

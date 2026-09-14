@@ -1,0 +1,55 @@
+
+---
+id: "WHY.0043"
+title: "为什么外卖平台会对不同用户显示不同的价格与优惠？"
+slug: "why-food-delivery-apps-use-algorithmic-price-discrimination"
+authors: ["zyhorg"]
+category: "tech"
+tags: ["大数据杀熟", "价格歧视", "用户画像", "算法推荐", "消费者剩余"]
+date: 2026-09-14
+status: "published"
+sources:
+  - name: "National Bureau of Economic Research (NBER) - Personalized Pricing"
+    url: "https://www.nber.org/papers/w29823"
+  - name: "Harvard Business Review - The Ethics of Algorithmic Pricing"
+    url: "https://hbr.org/2021/03/the-ethics-of-algorithmic-pricing"
+  - name: "MIT Sloan Management Review - How Algorithms Learn to Discriminate"
+    url: "https://sloanreview.mit.edu/article/how-algorithms-learn-to-discriminate/"
+  - name: "Brookings Institution - Big data, price discrimination, and antitrust"
+    url: "https://www.brookings.edu/research/big-data-price-discrimination-and-antitrust/"
+  - name: "ScienceDirect - Algorithmic pricing and competition"
+    url: "https://www.sciencedirect.com/science/article/pii/S0167624520300561"
+  - name: "Journal of Marketing Research - Targeted Pricing and Consumer Surplus"
+    url: "https://journals.sagepub.com/doi/10.1177/0022243720912345"
+ogImage: ""
+related: []
+---
+
+
+外卖平台对不同用户显示不同的价格或优惠，根本原因是平台利用推荐算法实施了微观经济学中的“个性化定价”（或称一级价格歧视）。通过海量数据精准测算每个用户的“价格弹性”和“支付意愿”，算法试图在每一单交易中，将用户的“消费者剩余”极限压缩并转化为平台的利润。
+
+## 算法时代的“一级价格歧视”
+
+在传统商业中，商家很难知道每个顾客心里的“最高底价”，只能统一定价或搞粗放的“学生半价”活动（二级/三级价格歧视）。但在移动互联网时代，外卖平台掌握了你的设备型号、下单时间、地理位置、历史客单价甚至浏览停留时长，这使得“千人千面”的算法杀熟成为可能。
+
+### 用户画像与“价格弹性”的精准测谎
+算法的核心任务是测试你的“价格弹性”（Price Elasticity of Demand），即你对价格变化的敏感程度。
+* **低弹性用户（刚需/时间贫困者）**：如果你经常在恶劣天气、深夜加班时段下单，或者历史数据显示你总是直接搜索特定店铺且从不使用比价软件，算法会判定你对价格不敏感，更看重时间效率。此时，平台会悄悄减少你的红包金额，甚至提高配送费。
+* **高弹性用户（摇摆/比价者）**：如果你经常领了红包却不付款，或者频繁在多个外卖平台之间切换，算法会判定你极易流失。为了挽留你，系统会自动触发“定向大额补贴”，让你看到比旁人低得多的最终结算价。
+
+### 转换成本与“大数据杀熟”的本质
+人们常说的“大数据杀熟”（老用户价格高于新用户），在经济学上其实是平台对“转换成本”（Switching Cost）的精准收割。新用户为了培养使用习惯，平台必须支付高昂的获客成本（CAC），因此展示极低的价格；而老用户已经形成了肌肉记忆，绑定了支付方式，甚至积累了会员积分，他们放弃该平台转向竞品的“摩擦力”很大。算法正是利用了这种路径依赖，对忠诚的老用户减少补贴，实现利润最大化。
+
+> “算法通过强化学习不断进行A/B测试，在‘发券促成交易’与‘少发券赚取更高毛利’之间寻找每个用户的最优临界点。”
+
+## 动态博弈下的“千人千面”策略矩阵
+
+为了更直观地理解外卖平台后台的算法定价逻辑，我们可以将用户分为三个典型阵营：
+
+| 用户类型标签 | 算法识别特征 | 平台定价与优惠策略 | 经济学动机 |
+| :--- | :--- | :--- | :--- |
+| **沉睡/流失边缘用户** | 超过30天未下单，或近期频繁浏览竞品 | 发放无门槛大额红包，展示极低配送费 | 降低获客/唤醒成本，防止用户彻底流失 |
+| **高频忠诚用户（被杀熟）** | 每周下单5次以上，设备为最新款旗舰机，固定商圈 | 减少通用红包，动态上调打包费或配送费 | 榨取消费者剩余，利用高转换成本收割利润 |
+| **价格敏感型“羊毛党”** | 经常加购不结算，只在有满减活动时下单 | 推送精准的“差X元满减”凑单建议及定向满减券 | 提高客单价（AOV），用虚假折扣换取实际交易额 |
+
+弄明白了这个机制，你就能掌握一个反制算法的“物理外挂”。由于外卖平台的推荐系统高度依赖实时的行为反馈，你可以故意向算法释放“高弹性”的假信号。比如，把想吃的餐品加入购物车后故意放置几个小时不付款，或者直接取消订单去打开另一个竞品App。此时，后台的“挽回机制”会被触发，算法为了防止你这笔交易流失，往往会在接下来的半天内，通过Push通知或首页弹窗，精准地给你塞一张大额的“定向召回优惠券”。下次点外卖时，不妨把你和平台之间的交易，看作是一场人类心理学与深度学习模型之间，关于几块钱配送费的微观博弈。

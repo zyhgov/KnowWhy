@@ -1,0 +1,74 @@
+
+---
+id: "WHY.0055"
+title: "为什么 AI 会一本正经地捏造不存在的论文和网址？"
+slug: "why-ai-hallucinates-fake-papers-and-urls"
+authors: ["zyhorg"]
+category: "tech"
+tags: ["AI幻觉", "下一个词预测", "大语言模型", "概率分布", "事实核查"]
+date: 2026-09-14
+status: "published"
+sources:
+  - name: "Harvard Kennedy School - A conceptual framework for studying AI hallucinations"
+    url: "https://misinforeview.hks.harvard.edu/article/new-sources-of-inaccuracy-a-conceptual-framework-for-studying-ai-hallucinations/"
+  - name: "University of Florida - How do large language models understand user intent?"
+    url: "https://answers.businesslibrary.uflib.ufl.edu/genai/faq/404457"
+  - name: "Nature - Evaluating large language models for accuracy incentivizes"
+    url: "https://www.nature.com/articles/s41586-026-10549-w"
+  - name: "arXiv - A Failure Mode Taxonomy of 100 Fabricated Citations"
+    url: "https://arxiv.org/html/2602.05930v1"
+  - name: "arXiv - Detecting Citation Hallucinations in the Era of AI-Generated Content"
+    url: "https://arxiv.org/html/2602.15871v1"
+  - name: "MIT Jameel Clinic - Making it easier to verify an AI model's responses"
+    url: "https://jclinic.mit.edu/making-it-easier-to-verify-an-ai-models-responses/"
+  - name: "Stanford HAI - AI on Trial: Legal Models Hallucinate"
+    url: "https://hai.stanford.edu/news/ai-trial-legal-models-hallucinate-1-out-6-or-more-benchmarking-queries"
+  - name: "Stanford Law - Hallucination-Free? Assessing the Reliability of Leading AI Legal Research Tools"
+    url: "https://law.stanford.edu/publications/hallucination-free-assessing-the-reliability-of-leading-ai-legal-research-tools/"
+  - name: "arXiv - Citation Grounding Measures the Oracle"
+    url: "https://arxiv.org/abs/2606.00898"
+ogImage: ""
+related: []
+---
+
+
+AI 会一本正经地捏造不存在的论文、学者和网址，这种现象在人工智能领域被称为“AI 幻觉”（AI Hallucination）。其根本原因在于大语言模型（LLM）的底层运行机制是基于概率的“下一个词预测”（Next-token prediction），它是在进行文本的“统计学接龙”，而非从真实的物理数据库中检索事实。
+
+## 概率接龙：没有“真相”的数学迷宫
+
+要理解 AI 为什么会撒谎，必须打破一个直觉误区：大语言模型并不是一个“搜索引擎”或“知识库”，而是一个极其复杂的“概率计算器”。
+
+### 下一个词预测（Next-Token Prediction）
+大语言模型在预训练阶段的核心目标，就是优化对下一个词（Token）的预测能力。当你要求 AI“提供三篇关于量子计算的权威论文”时，它并不会去连接知网或 arXiv 的数据库进行检索。相反，它会根据你输入的提示词（Prompt），在庞大的词汇表中计算每一个词出现的概率分布，然后抽样出最符合统计学规律的下一个词。
+
+只要核心机制依然是“下一个词预测”，幻觉就会作为一种结构性缺陷持续存在。模型并不理解什么是“真实存在的文献”，它只知道“在人类的学术论文中，当出现‘量子计算’和‘权威论文’这两个词时，接下来最有可能出现什么样的字符排列组合”。
+
+## 模式匹配：拼凑出的“弗兰肯斯坦”
+
+既然 AI 没有检索能力，为什么它生成的假论文和假网址看起来那么逼真，甚至连 DOI（数字对象唯一标识符）的格式都完全正确？这归功于模型强大的“模式匹配”与“格式模仿”能力。
+
+### 参考文献的“格式幻觉”
+模型在训练时吞吐了数以千亿计的网页和学术论文，它早已将“参考文献的元数据结构”内化为一种统计学模式。当它开始生成引文时，它会从概率分布中抽取真实的顶级学者名字、合理的期刊名称、符合逻辑的发表年份，并按照标准的 APA 或 IEEE 格式将它们“缝合”在一起。这就产生了一篇作者真实存在、期刊真实存在、研究方向也高度相关，但在物理世界中从未被写出来的“缝合怪”论文。
+
+### 网址与 DOI 的“字符伪装”
+同样的逻辑也适用于网址。AI 记住了学术网址或 DOI 链接的字符特征（例如 `https://doi.org/10.1038/s41586-02x-xxxxx`）。当它需要生成一个链接时，它只是根据概率生成了一串符合该正则表达式特征的字符串，而根本没有进行 DNS 解析或 HTTP 状态码验证。这串字符在语法上完美无缺，但在现实的互联网服务器上却是一个 404 不存在的幽灵地址。
+
+## 符号落地的缺失：无法“核实”的封闭系统
+
+从认知科学和计算机科学的交叉视角来看，大语言模型缺乏“符号落地”（Symbol Grounding）能力。这意味着模型内部的数学符号与外部客观世界的物理实体之间，没有建立硬性的验证连接。
+
+### 缺乏内置的事实核查器
+麻省理工学院（MIT）的研究指出，这些模型有时会“幻觉”出错误或缺乏证据支持的信息，因为它们没有内置的、独立于生成过程之外的“事实核查器”。模型在生成假论文时，其内部的注意力机制（Attention）只是在关注上下文的连贯性，而不会触发一个“去外部数据库比对真伪”的子程序。
+
+斯坦福大学法学院和 HAI（以人类为中心的 AI 研究所）的多次基准测试表明，这种幻觉在法律判例和学术引文等高风险领域极具破坏性，因为模型会生成看似极其权威、逻辑严密但完全虚构的证据、。
+
+### 人类检索与 AI 生成的底层逻辑对比
+
+| 核心维度 | 传统搜索引擎（如 Google Scholar） | 大语言模型（LLM） |
+| :--- | :--- | :--- |
+| **核心动作** | 索引匹配与数据库检索 | 基于上下文概率分布的下一个词生成 |
+| **事实来源** | 物理服务器上真实存在的 HTML 与 PDF 文件 | 训练数据中压缩的统计学权重与模式记忆 |
+| **输出结果** | 100% 真实存在的链接（可能不相关） | 语法完美、高度相关但可能物理上不存在的“幻觉” |
+| **验证机制** | 返回真实的 HTTP 状态码（200 OK / 404 Not Found） | 无外部验证，仅追求文本的语义连贯性 |
+
+弄明白了这个机制，你就能看懂为什么如今最先进的 AI 系统都在拼命引入一种名为 RAG（检索增强生成，Retrieval-Augmented Generation）的外挂技术了。RAG 的本质，就是强行在 AI 的“概率接龙”和人类的“事实数据库”之间插入了一个物理锚点，强迫 AI 在生成引文前，先去真实的向量数据库中检索出原文，从而抑制其“自由发挥”的幻觉倾向。下次当你看到 AI 侃侃而谈地列出一长串带有 DOI 的完美参考文献时，请务必保持警惕：你面对的不是一个博学的图书馆管理员，而是一个极其聪明、掌握了所有学术八股文格式，但永远在闭着眼睛玩概率拼图的“文字魔术师”。

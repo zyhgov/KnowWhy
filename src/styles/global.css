@@ -618,7 +618,13 @@ html[data-font-size='large'] {
 		background 150ms ease;
 }
 
-.entries-pager button:hover {
+/* 首/末页边界的禁用态:淡化且不可点,hover 不产生反馈 */
+.entries-pager button:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.entries-pager button:not(:disabled):hover {
 	border-color: var(--amber);
 	color: var(--ink-deep);
 }
@@ -628,6 +634,39 @@ html[data-font-size='large'] {
 	border-color: var(--ink);
 	color: #fff;
 	font-weight: 600;
+}
+
+/* 页码窗口的省略号:与按钮同高对齐、不可交互 */
+.entries-pager .pager-dots {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 1.6rem;
+	padding: 0.4rem 0.15rem;
+	color: var(--text-muted);
+	font-size: 0.88rem;
+	user-select: none;
+}
+
+/* 页码选择跳转下拉:视觉与按钮一致 */
+.entries-pager select {
+	min-width: 6.6rem;
+	padding: 0.4rem 0.45rem;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-sm);
+	background: var(--paper);
+	font: inherit;
+	font-size: 0.88rem;
+	color: var(--text);
+	cursor: pointer;
+	transition:
+		border-color 150ms ease,
+		color 150ms ease;
+}
+
+.entries-pager select:hover {
+	border-color: var(--amber);
+	color: var(--ink-deep);
 }
 
 /* ---------- 回到顶部(React 交互组件,client:only 水合) ---------- */
@@ -1088,4 +1127,12 @@ html[data-font-size='large'] {
 
 .source-links a:hover {
 	color: var(--blue-deep);
+}
+
+/* ---------- 文章分享(ArticleShare.astro) ---------- */
+/* 弹层内二维码为 article-share.ts 运行时注入的动态 SVG,无 scoped 属性,故在此提供自适应尺寸 */
+.share-qr svg {
+	display: block;
+	width: 100%;
+	height: auto;
 }
