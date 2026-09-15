@@ -485,3 +485,14 @@
 - 需求:重写 README.md 面向 GitHub 展示,用上站点 Logo,内容写完整;纯文档变更,不跑构建。
 - 实现:顶部居中放置 KW Logo(`<picture>` 按 GitHub 深浅色主题自动切换 `public/kw-logo-彩色.svg` / `kw-logo-白色.svg`)+ 标题格言 + 徽章行(站点 / Astro 7 / Node≥22.12 / Cloudflare Pages);正文含 项目简介、三条内容线、站点功能、技术栈、目录结构、本地开发、撰写内容(frontmatter 示例)、部署、参与与反馈。所有事实(站点信息、分类、脚本、目录、schema)均从 @src/consts.ts、@src/content.config.ts 与目录实际核对。
 - 验证:按用户要求未跑构建(纯文档变更)。
+
+### 17:50 - IndexNow 全量推送脚本
+- 需求:写一个 JS 脚本,一运行就把站点地图里的全部链接推送到 Bing 的 IndexNow。
+- 实现:新建 `scripts/indexnow.mjs`(Node 原生、零依赖)——抓取 `/sitemap.xml` 递归展开子 sitemap 收集全部 `<loc>`(去重,超 10000 自动分批),POST 到 `https://www.bing.com/indexnow`;密钥从 `public/3875c6d00f4623d9afa66838aca673fb.txt` 读取,因该文件「文件名与内容不一致」,用 `keyLocation` 显式指向该文件的线上地址;`package.json` 新增 `npm run indexnow`。
+- 验证:实跑一次成功——从线上站点地图收集 120 个链接,推送返回 HTTP 202(已接收)。
+
+### 18:10 - 更正:IndexNow 密钥文件用错
+- 说明:`public/3875c6d00f4623d9afa66838aca673fb.txt` 实为腾讯微信的验证文件,与 IndexNow 无关;真正的 IndexNow 密钥文件是 `public/eb7fc2ca3be64e4aa4a4e490dac3a406.txt`(文件名即密钥、内容与文件名一致)。
+- 实现:`scripts/indexnow.mjs` 的 `KEY_FILE` 常量更正为 eb7fc2ca…txt,文件头注释同步修正。
+- 状态:该密钥文件目前线上仍 404(尚未部署);Bing 需能访问 keyLocation 才能完成密钥验证,下次部署后运行 `npm run indexnow` 即可用正确密钥完成推送。
+- 验证:本地已核对新密钥文件内容与文件名一致;本次未再实跑(避免以不可达密钥提交)。
