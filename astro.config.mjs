@@ -4,14 +4,48 @@ import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import react from '@astrojs/react';
 import cloudflare from '@astrojs/cloudflare';
+import { unified } from '@astrojs/markdown-remark';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+
+// 脚注标题本地化:remark-rehype 生成的脚注区块标题默认英文 "Footnotes"(h2#footnote-label),
+// 用最小 rehype 插件将其改写为中文;脚注双向跳转的遮挡避让见 global.css 的 scroll-margin 规则
+function rehypeFootnotesZh() {
+	/** @param {import('hast').Root | import('hast').Element} node */
+	const walk = (node) => {
+		if (node.type === 'element' && node.tagName === 'h2' && node.properties?.id === 'footnote-label') {
+			node.children = [{ type: 'text', value: '脚注' }];
+			return;
+		}
+		for (const child of node.children) {
+			if (child.type === 'element') walk(child);
+		}
+	};
+	/** @param {import('hast').Root} tree */
+	const run = (tree) => walk(tree);
+	return run;
+}
 
 // https://astro.build/config
 export default defineConfig({
 	// 站点基准 URL:canonical / sitemap / openGraph 使用(绑定正式域名后如有变动再修改)
 	site: 'https://knowwhy.zyhorg.cn',
 
+	// Markdown 处理器:Astro 7 默认使用原生 Sätteri 流水线,不支持 remark/rehype 插件;
+	// 本站需要数学公式(remark-math 解析 $...$ / $$...$$,rehype-katex 渲染为 HTML),故切换为 unified 流水线,
+	// .mdx 会继承该处理器及其插件;公式样式在 BaseLayout 引入 katex.min.css
+	markdown: {
+		processor: unified({
+			remarkPlugins: [remarkMath],
+			rehypePlugins: [rehypeKatex, rehypeFootnotesZh],
+		}),
+		// 围栏语言排除高亮:math 交 rehype-katex 渲染;mermaid 交前端 mermaid-render 脚本渲染,
+		// 排除后保持原始 <pre><code class="language-mermaid"> 标记,便于运行时识别(同时避免 Shiki 未知语言告警)
+		syntaxHighlight: { type: 'shiki', excludeLangs: ['math', 'mermaid'] },
+	},
+
 	integrations: [
-		// MDX:支持在 Markdown 中混用 JSX 组件
+		// MDX:支持在 Markdown 中混用 JSX 组件(remark/rehype 插件统一配在 markdown.processor)
 		mdx(),
 		// Sitemap:构建时自动生成 sitemap-index.xml
 		sitemap(),

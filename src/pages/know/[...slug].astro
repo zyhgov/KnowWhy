@@ -158,6 +158,11 @@ const authorNames = data.authors.map((key) => getAuthor(key)?.name ?? key);
 	</Fragment>
 </BaseLayout>
 
+<script>
+	import '../../scripts/code-enhance';
+	import '../../scripts/mermaid-render';
+</script>
+
 <style>
 	.article {
 		max-width: 860px;

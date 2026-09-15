@@ -335,6 +335,12 @@ html[data-font-size='large'] {
 	scroll-margin-top: calc(var(--header-h, 64px) + 3.25rem);
 }
 
+/* 脚注双向跳转(正文引用 ↔ 脚注条目)同样避开吸顶导航与目录条:
+   mdast-util-to-hast 为脚注两端生成的 id 均带 user-content- 前缀,按前缀统一避让 */
+.prose [id^="user-content-"] {
+	scroll-margin-top: calc(var(--header-h, 64px) + 3.25rem);
+}
+
 .prose ul,
 .prose ol {
 	margin-block: 1.1em;
@@ -386,6 +392,112 @@ html[data-font-size='large'] {
 	padding: 0;
 	color: inherit;
 	font-size: 0.85rem;
+}
+
+/* ---------- 代码块增强(code-enhance.ts 运行时插入工具条;行号为纯 CSS,伪元素不参与复制/选中) ---------- */
+.prose .code-block {
+	position: relative;
+	margin-block: 1.5em;
+}
+
+/* 包裹后外边距上移到 .code-block,顶部预留工具条带 */
+.prose .code-block pre {
+	margin-block: 0;
+	padding-top: 2.5em;
+}
+
+.prose .code-toolbar {
+	position: absolute;
+	top: 0.6em;
+	left: 1.25em;
+	right: 0.85em;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	pointer-events: none;
+}
+
+.prose .code-toolbar > * {
+	pointer-events: auto;
+}
+
+.prose .code-lang {
+	font-size: 0.72rem;
+	letter-spacing: 0.05em;
+	color: rgb(226 232 240 / 42%);
+}
+
+.prose .code-copy {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35em;
+	padding: 0.28em 0.6em;
+	border: 1px solid rgb(226 232 240 / 18%);
+	border-radius: var(--radius-sm);
+	background: rgb(226 232 240 / 6%);
+	color: rgb(226 232 240 / 78%);
+	font-size: 0.72rem;
+	cursor: pointer;
+	transition:
+		color 150ms ease,
+		border-color 150ms ease,
+		background 150ms ease;
+}
+
+.prose .code-copy svg {
+	display: block;
+}
+
+.prose .code-copy:hover {
+	color: #fff;
+	border-color: rgb(226 232 240 / 38%);
+	background: rgb(226 232 240 / 12%);
+}
+
+.prose .code-copy.is-done {
+	color: var(--amber);
+	border-color: rgb(245 158 11 / 50%);
+}
+
+/* 行号:Shiki 每行渲染为 .line,用 CSS 计数器在行首生成序号。
+   注意 .line 保持 inline:Shiki 经典结构的行间换行符是代码文本节点,
+   若设 display:block,块级行之间的换行符会被渲染成额外空行(行距翻倍) */
+.prose .astro-code code {
+	counter-reset: code-line;
+}
+
+.prose .astro-code .line {
+	counter-increment: code-line;
+}
+
+.prose .astro-code .line::before {
+	content: counter(code-line);
+	display: inline-block;
+	width: 2.1em;
+	margin-right: 1.15em;
+	text-align: right;
+	color: rgb(226 232 240 / 32%);
+	user-select: none;
+}
+
+/* Mermaid 图形(mermaid-render.ts 运行时将围栏代码块替换为内联 SVG) */
+.prose .mermaid-figure {
+	margin-block: 1.5em;
+	text-align: center;
+	overflow-x: auto;
+}
+
+.prose .mermaid-figure svg {
+	display: block;
+	max-width: 100%;
+	height: auto;
+	margin-inline: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.prose .code-copy {
+		transition: none;
+	}
 }
 
 .prose a {

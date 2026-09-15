@@ -446,3 +446,32 @@
 - 三模板接入:why/know 位于正文后、参考来源前;news 位于正文后、上下篇导航前。`global.css` 补 `.share-qr svg` 全局规则(二维码为运行时注入的动态 SVG,无 scoped 属性,scoped 样式不生效)。
 - 依赖:新增 `uqr`(运行时二维码生成,按需加载)。
 - 验证:`npm run build` 一次通过(103 页,11.45s);产物——84 篇文章页全部含分享组件与图标引用;三板块代表页 19 项标记(8 按钮/6 图标/浮层/toast/脚本)齐全;uqr 拆为独立 chunk `dist.CVuhE9lw.js`(10.4KB),仅点击二维码/微信时动态加载,HTML 零静态引用;`.share-qr svg` 进入 BaseLayout CSS;`dist/client/fenxiang-icon/` 六个图标资源就位。
+
+## 2026-09-15
+
+### 10:48 - 文章数学公式渲染接入(KaTeX,why / know / news 全站)
+- 现象:文章内 `$f(f(x)) = f(x)$`、`$2^{10}$` 等 LaTeX 公式未被渲染,以纯文本原样输出(项目从未配置数学插件)。
+- 根因查证:Astro 7 默认 Markdown 处理器为原生 Sätteri,不支持 remark/rehype 生态插件;@astrojs/mdx 集成的 `remarkPlugins`/`rehypePlugins` 参数已废弃且会静默失败——其内部 `importUnified()` 尝试 `import('@astrojs/markdown-remark')`,该包未安装时直接返回 undefined,插件被忽略、处理器回退 satteri。
+- 修复:安装 `remark-math`(解析 `$...$` / `$$...$$`)+ `rehype-katex`(渲染 KaTeX HTML+MathML 双输出)+ `katex`(样式,锁 0.16.x 与 rehype-katex 内部版本对齐);`astro.config.mjs` 新增 `markdown.processor = unified({ remarkPlugins, rehypePlugins })`(`unified` 来自 `@astrojs/markdown-remark@^7.3.0`),`.mdx` 自动继承;`BaseLayout.astro` 引入 `katex/dist/katex.min.css`(字体随包本地打包,符合自托管惯例)。
+- 验证:`npm run build` 一次通过(109 页,18.60s);两篇公式文章产物含 `class="katex"` + katex-html/katex-mathml(TeX 语义正确),原始 `$...$` 文本消失;回归——表格/内联代码/加粗/h2 锚点正常,非公式文章无 katex 标记;KaTeX 样式进入 BaseLayout CSS,59 个 KaTeX 字体文件输出至 _astro。
+
+### 13:55 - 文章代码块增强与 Mermaid 图形渲染(行号 / 语言标签 / 复制按钮,why / know / news 全站)
+- 需求:文章代码块显示行号、编程语言、复制按钮;```mermaid 围栏渲染为真正的流程图。
+- 关键查证:Astro 7 的 Shiki 高亮对未知语言(`mermaid`)会静默降级 plaintext 并把 `data-language` 改写为 plaintext——运行时无法凭标记识别 mermaid 块,且产生「[Shiki] The language "mermaid" doesn't exist」构建告警。正确路径是顶层 `markdown.syntaxHighlight.excludeLangs`(content-layer 将其传入 unified 处理器,.md / .mdx 均生效),排除后围栏保持原始 `<pre><code class="language-mermaid">` 标记。
+- 配置:`astro.config.mjs` 增加 `syntaxHighlight: { type: 'shiki', excludeLangs: ['math', 'mermaid'] }`(显式保留默认的 math 排除)。
+- 新建 `src/scripts/mermaid-render.ts`:发现 `.prose pre > code.language-mermaid` 时才 `import('mermaid')` 动态加载(按需 chunk),v12 `mermaid.render()` 逐块替换为内联 SVG(`figure.mermaid-figure`);`suppressErrorRendering` + try/catch,失败保留原代码块并兜底清理临时节点;图形字体继承站点正文字体;末尾 `export {}` 成为模块。
+- 新建 `src/scripts/code-enhance.ts`:每个 Shiki 块(`.prose pre.astro-code`)外包 `.code-block` 并插入工具条——左上语言标签(`data-language` 映射展示名)、右上复制按钮(reicon Copy 图标;复制优先 Clipboard API,失败回退 execCommand;反馈切换按钮文案 复制→已复制);行号不走 JS,由 CSS 计数器对每行 `.line::before` 生成(伪元素不参与复制/选中)。
+- 样式:`global.css` 补 `.code-block / .code-toolbar / .code-lang / .code-copy / .line::before / .mermaid-figure` 全局规则(运行时动态 DOM 无 scoped 属性,遵循既有约定);三篇文章模板(`[category]/[...slug]`、`know/[...slug]`、`news/[...slug]`)统一引入两个脚本。
+- 依赖:新增 `mermaid@12`(katex 0.16.47 全树 dedupe,无版本冲突)。
+- 验证:`npm run build` 一次通过(110 页,21.57s);测试文章 mermaid 块保持 `<code class="language-mermaid">` 原始标记、0 条 shiki 泄露,python 块含 `data-language="python"` + `.line` 行,KaTeX 不受影响;两脚本合并为 `mermaid-render.CZy3Bz70.js`(6KB),mermaid 核心经 `__vite__mapDeps` 动态加载(核心 chunk 82KB,依赖图另含 233KB 内部 chunk 等),所有文章页 HTML 零静态引用 mermaid 核心;回归——普通文章页共享脚本 stub、无 mermaid 引用,公式页 katex 正常;新样式全部进入 BaseLayout CSS。
+- 修复(预览反馈):代码行之间多出一个空行、行距翻倍——Shiki 经典结构行间是换行符文本节点,`.line` 设 display:block 后该换行符被渲染成额外空行;改为 `.line` 保持 inline(仅保留 counter-increment),行距恢复正常。
+
+### 14:12 - 脚注中文化 + 双向跳转避让吸顶导航遮挡
+- 需求:脚注标题显示中文;正文脚注引用 ↔ 脚注条目的双向 hash 跳转被吸顶导航栏/目录条遮挡。
+- 实现:`astro.config.mjs` 新增最小 rehype 插件 `rehypeFootnotesZh`(遍历哈希树,将 `h2#footnote-label` 的英文 "Footnotes" 文本改写为「脚注」);`global.css` 对 `.prose [id^="user-content-"]`(mdast-util-to-hast 为脚注两端生成的 id 统一前缀)补 `scroll-margin-top`,复用标题锚点同款避让值 `calc(var(--header-h, 64px) + 3.25rem)`。
+- 验证:`npm run build` 一次通过(110 页,19.16s);产物——脚注标题为「脚注」、正文引用/回跳目标均带 user-content- id,BaseLayout CSS 含新避让规则。
+
+### 14:19 - 窄屏导航收进汉堡菜单
+- 需求:小屏(手机)下顶部导航「分类/WHY/Know/新闻/关于/搜索」全部收进汉堡菜单;汉堡图标必须使用已安装图标库,禁止自绘 SVG。
+- 实现:`Header.astro` 导航右侧新增 `.nav-toggle` 汉堡按钮(矢量数据取自 reicon-react 包 `Menu` 图标,与 Search4 同款 O 权重;含 `aria-expanded`/`aria-controls="site-nav"`);≤720px 时 `.site-nav` 收为绝对定位于吸顶头下方的下拉面板(`.is-open` 展开,面板内搜索项补显「搜索」文字),移除旧「品牌行+导航行」两行换行布局;新增组件内联脚本——点击按钮切换,点击导航项/面板外区域或按 Esc 自动收起。
+- 验证:`npm run build` 一次通过(110 页,20.52s);产物 `index.html` 含按钮标记(id="site-nav"/nav-toggle/aria-controls/nav-search-label),切换脚本以内联 module 脚本落位(含 `.nav-toggle`+`#site-nav` 逻辑)。

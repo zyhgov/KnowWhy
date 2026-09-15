@@ -1,0 +1,74 @@
+
+---
+id: "WHY.0064"
+title: "为什么硬盘和U盘的实际可用容量，总比包装上印的小？"
+slug: "why-storage-capacity-is-less-than-advertised"
+authors: ["zyhorg"]
+category: "tech"
+tags: ["存储容量", "十进制与二进制", "文件系统", "SSD预留空间", "硬件常识"]
+date: "2026-09-15"
+status: "published"
+sources:
+  - name: "Tom's Hardware - Real vs Advertsied HD Capacity - The 7% Rule"
+    url: "https://forums.tomshardware.com/threads/real-vs-advertsied-hd-capacity-the-7-rule.689978/"
+  - name: "Tom's Hardware - How 1TB Hard Drive Is 931GB in Windows"
+    url: "https://forums.tomshardware.com/threads/how-1tb-hard-drive-is-931gb-in-windows-when-1024-binary-is-greater-than-1000-decimal-by-24.2678120/"
+  - name: "Microsoft Q&A - File System Overhead (MFT)"
+    url: "https://learn.microsoft.com/en-us/answers/questions/4113690/why-is-size-on-disk-different-on-a-flash-drive-whe"
+  - name: "Crucial - Storage Executive FAQ (Over Provisioning)"
+    url: "https://www.crucial.com/support/articles-faq-ssd/storage-executive-faq"
+  - name: "How-To Geek - Why Do Hard Drives Show the Wrong Capacity in Windows?"
+    url: "https://www.howtogeek.com/123268/windows-hard-drive-wrong-capacity/"
+ogImage: ""
+related: []
+---
+
+
+当你满怀期待地把一块标称 **1TB** 的新硬盘或 **16GB** 的U盘插上电脑时，系统显示的可用空间往往只有 **931GB** 或 **14.4GB** 左右。这常常让人怀疑自己是不是买到了假冒伪劣产品，或者被商家“偷工减料”了。但实际上，这并非硬件故障，而是由**计算标准的错位、文件系统的“公摊面积”以及硬件底层的保护机制**共同造成的。
+
+## 一、 最大的元凶：十进制与二进制的“跨服聊天”
+
+这是造成容量差异最主要的原因，占据了约 7% 到 9% 的“缩水”比例。硬盘厂商和 Windows 操作系统在计算“1GB”到底有多大时，使用的是两套完全不同的数学标准。
+
+### 硬盘厂商的“十进制”（Base-10）
+为了方便计算和营销（让数字看起来更大），硬件制造商采用的是国际单位制（SI）的十进制标准：
+* 1 KB = 1,000 Bytes
+* 1 MB = 1,000 KB = 1,000,000 Bytes
+* 1 GB = 1,000 MB = **1,000,000,000 Bytes（10的9次方）**
+* 1 TB = 1,000 GB = **1,000,000,000,000 Bytes（10的12次方）**
+
+### Windows 系统的“二进制”（Base-2）
+计算机底层是二进制运行的，因此 Windows 操作系统在识别存储颗粒时，采用的是 $2^{10}$（1024）的进位制：
+* 1 KB = 1,024 Bytes
+* 1 MB = 1,024 KB = 1,048,576 Bytes
+* 1 GB（严格意义上应称为 GiB）= 1,024 MB = **1,073,741,824 Bytes（2的30次方）**
+
+**“缩水”计算过程（以 1TB 硬盘为例）：**
+厂商出厂的 1TB 硬盘，物理总字节数是 `1,000,000,000,000` 字节。当它接入 Windows 电脑时，系统用二进制的 1GB（1,073,741,824 字节）去除以总字节数，得出的结果大约是 **931 GB**。你买的容量越大，这种进制转换带来的“绝对值缩水”就越惊人。
+
+## 二、 文件系统的“公摊面积”
+
+就像买房有公摊面积一样，硬盘在格式化时也需要建立文件系统（如 NTFS、FAT32 或 exFAT），这同样需要占用物理空间。
+
+文件系统需要创建庞大的元数据结构来记录每个文件的位置、大小、权限和碎片信息。例如，在 Windows 常用的 NTFS 文件系统中，有一个名为“主文件表”（Master File Table, MFT）的核心数据库，它必须占用一部分存储空间来维持整个磁盘的索引运转。这部分空间被系统底层锁定，用户无法用来存储自己的照片或文档。
+
+## 三、 SSD 的“养老基金”与隐藏分区
+
+如果你购买的是固态硬盘（SSD），容量的“缩水”现象会比机械硬盘更加明显，这涉及到闪存颗粒的物理特性。
+
+### 预留空间（Over-Provisioning）
+SSD 的闪存颗粒在反复擦写后会老化，且在进行“垃圾回收”和“磨损均衡”时，必须有额外的空白区块作为数据搬运的“中转站”。为了延长寿命和维持读写速度，SSD 控制器会在出厂时强制隐藏一部分空间（通常占总容量的 7% 到 28% 不等），专门留给控制器自己使用。这部分“养老基金”在操作系统的常规磁盘管理中是不可见的。
+
+### 隐藏分区与出厂预装
+此外，新买的 U盘或移动硬盘有时会包含厂商自带的加密软件或备份工具；而电脑自带的系统盘则会有 EFI 引导分区和 Windows 恢复分区，这些隐藏的分区也会吞噬掉一部分可见容量。
+
+### 存储设备“容量缩水”原因拆解表
+
+| 缩水原因 | 影响比例 / 容量 | 核心机制 |
+| :--- | :--- | :--- |
+| **进制换算差异** | 约 7% ~ 9% | 厂商用 1000 进制标称，Windows 用 1024 进制读取 |
+| **文件系统开销** | 约 1% ~ 2% | NTFS/FAT32 的元数据索引（如 MFT）占用底层空间 |
+| **SSD 预留空间** | 约 7% ~ 28% | 控制器隐藏空间用于磨损均衡、垃圾回收与坏块替换 |
+| **隐藏/恢复分区** | 几百 MB 到数十 GB | 厂商预装工具或系统引导/恢复分区占用 |
+
+弄明白了这个机制，你就能看懂科技界为了平息这种“跨服聊天”的争议所做出的努力。国际电工委员会（IEC）其实早就制定了专门的二进制单位：将 1024 进制的 GB 改称为 **GiB**（Gibibyte），TB 改称为 **TiB**（Tebibyte）。macOS 和 Linux 系统为了顺应硬件厂商的十进制习惯，已经改用了 1000 进制来显示容量，所以同一块硬盘插在 Mac 上显示的数值会比在 Windows 上大得多。下次当你看着 Windows 里那“不翼而飞”的几十个 G 感到心痛时，不妨释然一笑：它们并没有消失，只是化作了维持你数据安全的索引表和磨损均衡的缓冲池，默默在底层的硅片里守护着你的数字资产。
