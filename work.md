@@ -475,3 +475,13 @@
 - 需求:小屏(手机)下顶部导航「分类/WHY/Know/新闻/关于/搜索」全部收进汉堡菜单;汉堡图标必须使用已安装图标库,禁止自绘 SVG。
 - 实现:`Header.astro` 导航右侧新增 `.nav-toggle` 汉堡按钮(矢量数据取自 reicon-react 包 `Menu` 图标,与 Search4 同款 O 权重;含 `aria-expanded`/`aria-controls="site-nav"`);≤720px 时 `.site-nav` 收为绝对定位于吸顶头下方的下拉面板(`.is-open` 展开,面板内搜索项补显「搜索」文字),移除旧「品牌行+导航行」两行换行布局;新增组件内联脚本——点击按钮切换,点击导航项/面板外区域或按 Esc 自动收起。
 - 验证:`npm run build` 一次通过(110 页,20.52s);产物 `index.html` 含按钮标记(id="site-nav"/nav-toggle/aria-controls/nav-search-label),切换脚本以内联 module 脚本落位(含 `.nav-toggle`+`#site-nav` 逻辑)。
+
+### 17:10 - 新闻:GitHub 开源公告
+- 需求:在新闻板块发布一篇完整新闻,宣布项目已在 GitHub 公开(https://github.com/zyhgov/KnowWhy)。
+- 实现:新建 `src/content/news/2026-09-15-knowwhy-open-source.mdx`(沿用日期前缀命名惯例;`status: published`,tags ["meta","open-source","github"]);正文含 为什么开源 / 仓库里有什么 / 如何参与 / 最后 四节,文风与既有新闻一致。
+- 验证:`npm run build` 一次通过(121 页,45.07s);产物 `dist/client/news/2026-09-15-knowwhy-open-source/index.html` 落位且含仓库链接。
+
+### 17:40 - README 重写(GitHub 展示版)
+- 需求:重写 README.md 面向 GitHub 展示,用上站点 Logo,内容写完整;纯文档变更,不跑构建。
+- 实现:顶部居中放置 KW Logo(`<picture>` 按 GitHub 深浅色主题自动切换 `public/kw-logo-彩色.svg` / `kw-logo-白色.svg`)+ 标题格言 + 徽章行(站点 / Astro 7 / Node≥22.12 / Cloudflare Pages);正文含 项目简介、三条内容线、站点功能、技术栈、目录结构、本地开发、撰写内容(frontmatter 示例)、部署、参与与反馈。所有事实(站点信息、分类、脚本、目录、schema)均从 @src/consts.ts、@src/content.config.ts 与目录实际核对。
+- 验证:按用户要求未跑构建(纯文档变更)。
