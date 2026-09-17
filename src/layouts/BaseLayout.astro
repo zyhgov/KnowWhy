@@ -71,6 +71,8 @@ const ogImageURL = new URL(ogImage?.trim() || '/kw-og-images.jpg', SITE.url);
 		<link rel="icon" type="image/png" sizes="96x96" href="/icon/favicon-96x96.png" />
 		<link rel="icon" type="image/png" sizes="16x16" href="/icon/favicon-16x16.png" />
 		<link rel="manifest" href="/icon/manifest.json" />
+		<!-- RSS 订阅源(阅读器自动发现;页脚「内容线」栏有可见入口) -->
+		<link rel="alternate" type="application/rss+xml" title={`${SITE.name} | ${SITE.nameZh}`} href="/rss.xml" />
 		<meta name="msapplication-TileColor" content="#ffffff" />
 		<meta name="msapplication-TileImage" content="/icon/ms-icon-144x144.png" />
 		<meta name="theme-color" content="#ffffff" />
@@ -119,10 +121,19 @@ const ogImageURL = new URL(ogImage?.trim() || '/kw-og-images.jpg', SITE.url);
 				y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
 			})(window, document, "clarity", "script", "yh39o7mjvy");
 		</script>
-		<!-- 51.LA 网站统计(同步引入,id: LJhpuVmQONPz46Gl) -->
-		<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js" is:inline></script>
+		<!-- 51.LA 网站统计(动态注入异步加载,不阻塞首屏渲染;id: LJhpuVmQONPz46Gl) -->
 		<script is:inline>
-			LA.init({id:"LJhpuVmQONPz46Gl",ck:"LJhpuVmQONPz46Gl",autoTrack:true,hashMode:true})
+			(function () {
+				var s = document.createElement('script');
+				s.id = 'LA_COLLECT';
+				s.charset = 'UTF-8';
+				s.async = true;
+				s.src = '//sdk.51.la/js-sdk-pro.min.js';
+				s.onload = function () {
+					LA.init({id:"LJhpuVmQONPz46Gl",ck:"LJhpuVmQONPz46Gl",autoTrack:true,hashMode:true})
+				};
+				document.head.appendChild(s);
+			})();
 		</script>
 	</head>
 	<body>

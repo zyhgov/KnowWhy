@@ -1,4 +1,7 @@
 // @ts-check
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
@@ -26,6 +29,41 @@ function rehypeFootnotesZh() {
 	return run;
 }
 
+/*
+ * Sitemap lastmod:构建时扫描 src/content 三条内容线文件,从 frontmatter 的 date 字段
+ * 取真实发布日期并生成「slug → 日期」映射(slug 即文件名,与详情页 URL 末段一致);
+ * 搜索引擎仅在 lastmod 真实且一致时采信,故不使用构建时间整体刷新。
+ */
+function collectLastmodMap() {
+	/** @type {Map<string, Date>} */
+	const map = new Map();
+	const contentRoot = fileURLToPath(new URL('./src/content', import.meta.url));
+
+	/** @type {(dir: string) => void} */
+	const walk = (dir) => {
+		for (const name of readdirSync(dir)) {
+			const fullPath = join(dir, name);
+			if (statSync(fullPath).isDirectory()) {
+				walk(fullPath);
+				continue;
+			}
+			if (!/\.(md|mdx)$/.test(name)) continue;
+			// ^\s* 兼容文件头部的 BOM 与前导空行(部分内容文件以空行开头,而 frontmatter 仍被 Astro 正常解析)
+			const frontmatter = /^\s*---\r?\n([\s\S]*?)\r?\n---/.exec(readFileSync(fullPath, 'utf-8'));
+			const dateMatch = frontmatter && /^date:\s*(.+?)\s*$/m.exec(frontmatter[1]);
+			if (!dateMatch) continue;
+			const date = new Date(dateMatch[1].replace(/^['"]|['"]$/g, ''));
+			if (!Number.isNaN(date.getTime())) map.set(name.replace(/\.(md|mdx)$/, ''), date);
+		}
+	};
+
+	for (const line of ['why', 'know', 'news']) walk(join(contentRoot, line));
+	return map;
+}
+
+/** slug → 内容发布日期(sitemap lastmod 使用) */
+const lastmodMap = collectLastmodMap();
+
 // https://astro.build/config
 export default defineConfig({
 	// 站点基准 URL:canonical / sitemap / openGraph 使用(绑定正式域名后如有变动再修改)
@@ -47,8 +85,15 @@ export default defineConfig({
 	integrations: [
 		// MDX:支持在 Markdown 中混用 JSX 组件(remark/rehype 插件统一配在 markdown.processor)
 		mdx(),
-		// Sitemap:构建时自动生成 sitemap-index.xml
-		sitemap(),
+		// Sitemap:构建时自动生成 sitemap-index.xml;sitemap-0.xml 为详情页注入真实 lastmod
+		sitemap({
+			serialize(item) {
+				const slug = item.url.replace(/\/$/, '').split('/').pop();
+				const date = slug ? lastmodMap.get(slug) : undefined;
+				if (date) item.lastmod = date;
+				return item;
+			},
+		}),
 		// React:用于图标与交互组件的按需水合(默认不水合,仅显式 client:* 时激活)
 		react(),
 	],

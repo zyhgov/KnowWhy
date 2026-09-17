@@ -74,6 +74,8 @@ const randomFallback = discoverItems[1] ?? dailyFallback;
 
 // SEO:全站级结构化数据(WebSite + Organization),经 head 插槽注入
 const siteUrl = new URL('/', SITE.url).href;
+/** 官方开源仓库(Organization sameAs 实体关联用,与新闻/README 保持一致) */
+const repoUrl = 'https://github.com/zyhgov/KnowWhy';
 const siteJsonLd = JSON.stringify([
 	{
 		'@context': 'https://schema.org',
@@ -91,6 +93,7 @@ const siteJsonLd = JSON.stringify([
 		name: `${SITE.name}|${SITE.nameZh}`,
 		alternateName: SITE.nameZh,
 		url: siteUrl,
+		sameAs: [repoUrl],
 		logo: { '@type': 'ImageObject', url: new URL('/icon/android-icon-192x192.png', SITE.url).href },
 		email: SITE.email,
 		description: SITE.description,

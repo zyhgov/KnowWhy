@@ -496,3 +496,25 @@
 - 实现:`scripts/indexnow.mjs` 的 `KEY_FILE` 常量更正为 eb7fc2ca…txt,文件头注释同步修正。
 - 状态:该密钥文件目前线上仍 404(尚未部署);Bing 需能访问 keyLocation 才能完成密钥验证,下次部署后运行 `npm run indexnow` 即可用正确密钥完成推送。
 - 验证:本地已核对新密钥文件内容与文件名一致;本次未再实跑(避免以不可达密钥提交)。
+
+## 2026-09-17
+
+### 10:35 - SEO 汇总核查(对照外部诊断报告,产出 play/seo-review.md)
+- 需求:核查外部 AI 诊断报告(play/seo-qa.md)——OG 卡片是否缺失、还有哪些可强化的 SEO 项;基于项目真实情况输出结论。
+- 核查结论(线上实测 + 源码/产物/git 检索):① OG/Twitter 卡片、Article+BreadcrumbList+WebSite+Organization JSON-LD、canonical、noindex、图片 alt、HTTP→HTTPS 跳转均已就位——报告「缺失 OG 标签」不成立;② HSTS 线上仍为 `max-age=0`(该头由 Cloudflare 边缘注入,仓库无任何 HSTS 配置,修复须去 CF 面板把 Max Age 改为 12 months);③ 站点本就是纯静态 SSG,报告「SSR/TTFB 慢」判断不成立(`cf-cache-status: DYNAMIC` 是 Pages 正常标识);④ 新发现:sitemap-0.xml 120 条 loc 且 0 条 lastmod;`_headers` 文件仅存在于本地 dist 产物(09-15 构建)、从未提交 git,线上 _astro immutable 缓存规则有丢失风险;百度收录通道未做;51.LA 脚本同步加载。
+- 产出:`play/seo-review.md`(逐条核查 + 真实强化清单 + P0-P3 执行顺序)。
+- 验证:全部结论附线上响应/源码/产物证据;本次为核查与文档任务,未改代码、未跑构建。
+
+### 15:55 - SEO 强化四项落地(_headers 入源码 / 51.LA 异步 / sitemap lastmod / RSS)
+- 需求:落地 play/seo-review.md 的四项强化:① `_headers` 入源码 ② 51.LA 改异步 ③ sitemap 注入真实 lastmod ④ 新增 RSS 订阅并提供页面可见入口。
+- 实现:
+  - `public/_headers`(新增):`/_astro/*` → `Cache-Control: public, max-age=31536000, immutable`,把原先只存在于本机构建产物的缓存规则收回源码管理。
+  - `BaseLayout.astro`:51.LA 改为动态注入(createElement + async + onload 回调 LA.init),不再阻塞首屏;`<head>` 新增 RSS alternate 声明。`Footer.astro`:「内容线」栏新增「RSS 订阅」链接。
+  - `astro.config.mjs`:新增 `collectLastmodMap()`——构建时扫描内容文件 frontmatter 的 date,生成「slug → 日期」映射,经 `sitemap({ serialize })` 为详情页注入 lastmod;正则须容忍文件头部 BOM/前导空行(部分内容文件以空行开头)。
+  - `src/pages/rss.xml.ts`(新增,依赖 `@astrojs/rss`):聚合三条内容线全部已发布条目,按日期倒序;导语复用首页发现区提取策略,新闻优先用 summary;含 `zh-cn` 语言声明。
+- 验证:`npm run build` 通过(121 页);产物核对——`_headers` 落位且日志 "Parsed 1 valid header rule";sitemap 120 条 loc 中 102 条详情页全部带真实 lastmod(首版因文件前导空行仅 31 条,修正正则后 102 条);rss.xml 102 条 item;index.html 含异步 51.LA 注入脚本与 RSS alternate 声明。
+
+### 16:08 - Organization 结构化数据补 sameAs(GitHub 仓库)
+- 需求:SEO 小幅增强——帮助搜索引擎把「KnowWhy」实体与 GitHub 开源仓库关联。
+- 实现:`src/pages/index.astro` 新增 `repoUrl` 常量(https://github.com/zyhgov/KnowWhy,与新闻/README 保持一致),Organization JSON-LD 补 `sameAs: [repoUrl]`。
+- 验证:`npm run build` 通过;产物 index.html 的 JSON-LD 含 `sameAs":["https://github.com/zyhgov/KnowWhy"]`。
