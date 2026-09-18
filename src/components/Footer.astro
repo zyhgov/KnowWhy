@@ -71,8 +71,8 @@ const year = new Date().getFullYear();
 	.site-footer {
 		position: relative;
 		overflow: hidden;
-		background: var(--ink-deep);
-		color: #94a3b8;
+		background: var(--deep-bg);
+		color: var(--on-dark-soft);
 	}
 
 	.footer-grid {
@@ -88,7 +88,7 @@ const year = new Date().getFullYear();
 		gap: 0.6rem;
 		font-size: 1.15rem;
 		font-weight: 700;
-		color: #f1f5f9;
+		color: var(--on-dark-strong);
 	}
 
 	.footer-logo img {
@@ -101,7 +101,7 @@ const year = new Date().getFullYear();
 		margin-top: 0.8rem;
 		font-size: 0.88rem;
 		line-height: 1.7;
-		color: #94a3b8;
+		color: var(--on-dark-soft);
 	}
 
 	.footer-col h2 {
@@ -109,7 +109,7 @@ const year = new Date().getFullYear();
 		font-size: 0.82rem;
 		font-weight: 600;
 		letter-spacing: 0.06em;
-		color: #e2e8f0;
+		color: var(--on-dark-strong);
 	}
 
 	.footer-col ul {
@@ -127,7 +127,7 @@ const year = new Date().getFullYear();
 
 	.footer-col a {
 		font-size: 0.92rem;
-		color: #94a3b8;
+		color: var(--on-dark-soft);
 		transition: color 150ms ease;
 	}
 
@@ -141,13 +141,13 @@ const year = new Date().getFullYear();
 		justify-content: space-between;
 		gap: 0.5rem 1.5rem;
 		padding-block: 1.25rem;
-		border-top: 1px solid rgb(148 163 184 / 18%);
+		border-top: 1px solid color-mix(in srgb, var(--on-dark-soft) 18%, transparent);
 		font-size: 0.82rem;
-		color: #64748b;
+		color: var(--on-dark-muted);
 	}
 
 	.footer-bottom a {
-		color: #94a3b8;
+		color: var(--on-dark-soft);
 		transition: color 150ms ease;
 	}
 

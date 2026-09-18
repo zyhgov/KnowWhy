@@ -518,3 +518,42 @@
 - 需求:SEO 小幅增强——帮助搜索引擎把「KnowWhy」实体与 GitHub 开源仓库关联。
 - 实现:`src/pages/index.astro` 新增 `repoUrl` 常量(https://github.com/zyhgov/KnowWhy,与新闻/README 保持一致),Organization JSON-LD 补 `sameAs: [repoUrl]`。
 - 验证:`npm run build` 通过;产物 index.html 的 JSON-LD 含 `sameAs":["https://github.com/zyhgov/KnowWhy"]`。
+
+## 2026-09-18
+
+### 09:50 - 配色主题切换(默认 / Claude 暖调)
+- 需求:顶部导航栏新增配色主题切换器;默认主题保持现状,参考 `design/DESIGN-claude.md` 的配色(仅取颜色)新增「Claude 暖调」;要求文本/背景对比度达标,并为后续更多 design 文件预留扩展方式。
+- 实现:
+  - `ThemeSwitcher.astro`(新增):导航栏调色盘图标(reicon-react Palette)+ 主题菜单;选择写入 localStorage(`knowwhy:theme`)并设置 `html[data-theme]`;`BaseLayout.astro` 头部新增 is:inline 预置脚本,首帧前恢复避免闪烁;meta theme-color 随主题同步。
+  - `global.css`:新增 8 个语义令牌(玻璃面/二级表面/引用底色/高亮强调/深色面文字)清除内部硬编码;新增 `html[data-theme='claude']` 覆盖块(奶油画布 + 暖米卡面 + 珊瑚强调 + 暖青内容线 + 暖黑阴影);对比度按 WCAG AA 校核,来源色做最小必要加深(amber-deep #a04a30、text-muted #66645e、blue-deep #2b7265)。
+  - Header / Footer / ArticleToc / index / 404 / categories 共 24 处硬编码色转令牌或 color-mix;分类语义色(--tone)与代码高亮刻意不随主题联动。
+- 验证:`npm run build` 通过(126 页);产物核对——CSS 含主题令牌(#a04a30),HTML 含预置脚本与 ThemeSwitcher 完整标记;Header 集成后桌面导航与切换器整体贴右、窄屏切换器位于汉堡左侧。注:本机构建曾因 localhost 优先解析 IPv6 致适配器预渲染 fetch 失败,以 `NODE_OPTIONS=--dns-result-order=ipv4first` 解决(与代码无关)。
+
+### 10:35 - 新增「Notion 蓝调」主题(design/DESIGN-notion.md)
+- 需求:按既有主题机制新增第三个主题,配色参考 `design/DESIGN-notion.md`(仅取颜色)。
+- 实现:`ThemeSwitcher.astro` 主题清单追加 `{ id: 'notion', label: 'Notion 蓝调' }` 并补 `CHROME_COLORS` 画布色 `#f6f5f4`;`global.css` 追加 `html[data-theme='notion']` 覆盖块(暖纸画布 #f6f5f4 + 纯白卡面 + 近黑文字 + 单一蓝色强调 #0075de,Know 线转贴纸暖青 #2a9d99)。
+- 对比度(WCAG AA 手算):按钮深墨字对蓝底 4.6(悬停加亮 #1a84e0 后 5.4)、链接 #005bab 6.3+、次要文字 #615d59 6.0+、页脚深色面文字 4.6+;Notion 多彩贴纸色仅作装饰,不参与结构。
+- 验证:`npm run build` 通过(126 页);产物 CSS 含主题令牌(#0075de),HTML 含「Notion 蓝调」选项。
+
+### 10:58 - 新增三个主题:Vercel 极简 / NVIDIA 绿 / Supabase 翠绿
+- 需求:按既有三步法批量新增三个配色主题,色板出处 `design/DESIGN-vercel.md`、`DESIGN-nvidia.md`、`DESIGN-supabase.md`(仅取颜色)。
+- 实现:`ThemeSwitcher.astro` THEMES 追加三项并补 `CHROME_COLORS`(#fafafa/#ffffff/#ffffff);`global.css` 追加三个 `html[data-theme='xxx']` 覆盖块——Vercel(近白画布 #fafafa + Geist 近黑 + 链接蓝 CTA #0070f3 + 渐变青 Know 线)、NVIDIA(纸白 + 纯黑 + 单一绿 CTA #76b900 + #cccccc hairline、卡片零投影)、Supabase(纯白 + 近黑 + 翡翠绿 CTA #3ecf8e + 紫罗兰 Know 线)。
+- 对比度(WCAG AA 手算):按钮「深字对色底」Vercel 4.6(悬停 5.7)、NVIDIA 8.7(16)、Supabase 9.0(10.3);链接与次要文字 4.6+;深色面(页脚 = --ink-deep)文字 4.6+;来源色按最小必要加深派生深变体(青 #0b6e60 / 绿 #3f8500 / 绿 #0f7a50)。
+- 验证:`npm run build` 通过(126 页);产物 CSS 含三主题令牌(#0070f3/#76b900/#3ecf8e),HTML 含三个新选项。
+
+### 11:15 - 新增显示模式(跟随系统 / 亮色 / 暗色,默认跟随系统;与配色主题正交)
+- 需求:网站色调增加「显示模式」维度——跟随系统 / 亮色 / 暗色可选,默认跟随系统;偏好在首帧前恢复(不闪烁);与既有 6 套配色主题可任意组合。
+- 实现:
+  - `global.css` 令牌与块结构:
+    - 新增 3 个解耦令牌:`--deep-bg`(深色面背景:页脚 / 代码块,原先与 `--ink-deep` 混用)、`--on-ink`(墨色面选中按钮文字,原硬编码 #fff)、`--on-amber`(琥珀面主按钮文字,原误用 --ink-deep 会在暗色下变亮字压亮底);:root 与 5 个主题亮块同步补齐这三个令牌。
+    - `html[data-mode='dark']` 默认暗块:置于 :root 之后、主题亮块之前——同特异度后位胜出,未覆盖令牌(amber / amber-bright / on-amber / on-dark-*)由主题亮块兜底;6 个 `html[data-mode='dark'][data-theme='xxx']` 主题暗块(0,2,1)置于亮块之后;`color-scheme: light/dark` 分列 :root 与默认暗块(滚动条 / 表单控件随模式切原生配色)。
+    - 7 个暗块逐令牌按 WCAG AA 手算:正文 12+(default #cbd5e1 on #1f2937 系)、次要文字 4.9+、墨底亮字 / 琥珀底深字按钮 5.2~15.8;NVIDIA 暗色不写阴影令牌,继承亮块扁平风格(注释说明)。
+  - `ThemeSwitcher.astro`:面板改「显示模式」「配色主题」两组(组标题 + 分隔线);脚本拆分 applyTheme / applyMode——`knowwhy:mode` 存三值偏好,auto 经 `matchMedia('(prefers-color-scheme: dark)')` 解析后 html 落为 data-mode=light|dark;系统配色变化时 auto 实时同步;CHROME_COLORS 二维化(主题 × 明暗)刷新 meta theme-color。
+  - `BaseLayout.astro`:防闪烁内联脚本同步恢复 theme + mode(默认 auto 也解析为 light|dark 写入)。
+  - 组件解耦:Footer 背景、`.prose pre` 背景改 --deep-bg;view-switch / entries-pager / FontSizeSwitcher 选中文字与主按钮(index .btn-primary、404 .nf-btn-primary)改 --on-ink / --on-amber;ThemeSwitcher / Header / ArticleToc 三处阴影 mix 源由 --ink-deep 改 --deep-bg(亮色值与原相同=零变化,暗色保持深影)。
+- 验证:`npm run build` 通过(126 页);产物核对——CSS 含 7 个 data-mode 块且顺序为 :root → 默认暗块 → 6 亮块 → 6 暗块,`color-scheme:light`(:root)/`color-scheme:dark`(暗块)各就位,`.theme-menu-title`/`.theme-menu-sep` 落位;HTML 含「显示模式」三选项(aria-checked auto=true)与「配色主题」标题、防闪烁脚本含 knowwhy:mode 解析。注:`npm run preview` 预览与浏览器端交互验证由用户自查(预览入口已提供)。
+
+### 11:25 - 新闻:站点换装上线公告(6 套配色主题 + 亮暗显示模式)
+- 需求:在 /news/ 发布一篇新闻,介绍站点新增亮暗显示模式与 6 套配色主题;把 design/DESIGN-*.md 的色板写进文章,并注明这些设计来自 https://getdesign.md/。
+- 实现:新建 `src/content/news/2026-09-18-color-themes-and-dark-mode.mdx`(status: published;tags ["meta","design","theme"];沿用日期前缀命名惯例)——正文含:显示模式三选项(跟随系统默认 / 首帧恢复防闪烁 / 对比度 WCAG AA 校核)、6 套主题色板表(强调色 + 画布/深色面 + 气质)、每套主题的 Know 线配色落点(暖青 #5db8a6 / 暖青 #2a9d99 / 渐变青 #00dfd8 / NVIDIA 绿体系 / 紫罗兰 #644fc1)、设计来源说明(getdesign.md 收录的设计分析文档,仅取色不动布局字体)、颜色设计三原则。
+- 验证:`npm run build` 通过;产物 `/news/2026-09-18-color-themes-and-dark-mode/` 生成且含 getdesign.md 链接、GFM 色板表与各主题色值;`/news/` 列表页收录该 slug(预览服务仍在运行,直接刷新可见)。

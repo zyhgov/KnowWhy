@@ -76,6 +76,21 @@ const ogImageURL = new URL(ogImage?.trim() || '/kw-og-images.jpg', SITE.url);
 		<meta name="msapplication-TileColor" content="#ffffff" />
 		<meta name="msapplication-TileImage" content="/icon/ms-icon-144x144.png" />
 		<meta name="theme-color" content="#ffffff" />
+		<!-- 配色主题与显示模式预置:样式表加载前恢复访客选择,避免首帧闪烁
+		     (主题 default 不设置属性;显示模式总落为 light/dark,auto 由 prefers-color-scheme 解析) -->
+		<script is:inline>
+			(function () {
+				try {
+					var theme = localStorage.getItem('knowwhy:theme');
+					if (theme && theme !== 'default') document.documentElement.dataset.theme = theme;
+					var mode = localStorage.getItem('knowwhy:mode') || 'auto';
+					var dark =
+						mode === 'dark' ||
+						(mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+					document.documentElement.dataset.mode = dark ? 'dark' : 'light';
+				} catch (e) {}
+			})();
+		</script>
 		<!-- astro-seo:基础 meta(title / description / canonical / robots)+ openGraph + twitter → 卡片 -->
 		<SEO
 			title={fullTitle}

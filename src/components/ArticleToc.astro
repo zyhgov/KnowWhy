@@ -87,13 +87,13 @@ const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
 	}
 
 	.article-toc {
-		background: rgb(255 255 255 / 85%);
+		background: var(--glass);
 		backdrop-filter: blur(10px);
 		transition: box-shadow 200ms ease;
 	}
 
 	.article-toc[open] {
-		box-shadow: 0 16px 36px rgb(15 23 42 / 14%);
+		box-shadow: 0 16px 36px color-mix(in srgb, var(--deep-bg) 14%, transparent);
 	}
 
 	.toc-toggle {
@@ -170,14 +170,14 @@ const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
 	}
 
 	.toc-item a:hover {
-		background: #f8fafc;
+		background: var(--mist);
 		color: var(--ink-deep);
 	}
 
 	/* 当前阅读位置高亮 */
 	.toc-item a.is-active {
 		border-left-color: var(--amber);
-		background: rgb(245 158 11 / 8%);
+		background: color-mix(in srgb, var(--amber) 8%, transparent);
 		color: var(--ink-deep);
 		font-weight: 700;
 	}

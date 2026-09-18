@@ -291,7 +291,7 @@ const siteJsonLd = JSON.stringify([
 		gap: 1.5rem 2.5rem;
 		min-height: 22rem;
 		padding: 3.25rem 2.75rem;
-		background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+		background: linear-gradient(135deg, var(--paper) 0%, var(--surface-2) 100%);
 		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-card);
 	}
@@ -333,8 +333,8 @@ const siteJsonLd = JSON.stringify([
 		pointer-events: none;
 		background: radial-gradient(
 			circle,
-			rgb(245 158 11 / 12%) 0%,
-			rgb(245 158 11 / 5%) 38%,
+			color-mix(in srgb, var(--amber) 12%, transparent) 0%,
+			color-mix(in srgb, var(--amber) 5%, transparent) 38%,
 			transparent 68%
 		);
 		opacity: 0;
@@ -384,16 +384,16 @@ const siteJsonLd = JSON.stringify([
 
 	.btn-primary {
 		background: var(--amber);
-		color: var(--ink-deep);
+		color: var(--on-amber);
 	}
 
 	.btn-primary:hover {
 		transform: translateY(-1px);
-		background: #fbbf24;
+		background: var(--amber-bright);
 	}
 
 	.btn-ghost {
-		border: 1px solid rgb(15 23 42 / 25%);
+		border: 1px solid color-mix(in srgb, var(--ink-deep) 25%, transparent);
 		color: var(--ink-deep);
 	}
 
@@ -633,7 +633,7 @@ const siteJsonLd = JSON.stringify([
 		font-size: 0.9rem;
 		border: 1px dashed var(--line);
 		border-radius: var(--radius-md);
-		background: repeating-linear-gradient(45deg, #f8fafc, #f8fafc 14px, #f1f5f9 14px, #f1f5f9 28px);
+		background: repeating-linear-gradient(45deg, var(--mist), var(--mist) 14px, var(--surface-2) 14px, var(--surface-2) 28px);
 	}
 
 	@media (max-width: 640px) {
@@ -652,7 +652,7 @@ const siteJsonLd = JSON.stringify([
 	.discover-tags li {
 		font-size: 0.66rem;
 		color: var(--text-muted);
-		background: #f1f5f9;
+		background: var(--surface-2);
 		border-radius: 999px;
 		padding: 0.12rem 0.55rem;
 	}

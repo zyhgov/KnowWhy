@@ -1,7 +1,10 @@
 /* =========================================================
    KnowWhy|知其所以然 —— 全局样式入口
    1. 字体:Noto Sans SC(npm @fontsource,最高优先) > 自托管(public/fonts):OpenAI Sans > Geist Variable > SF Pro Text > SF Pro Display > PingFang SC
-   2. 品牌配色:深靛蓝 #1e293b + 琥珀黄 #f59e0b
+   2. 品牌配色:默认主题为深靛蓝 #1e293b + 琥珀黄 #f59e0b;配色主题(html[data-theme='xxx'])
+      与显示模式(html[data-mode='light|dark'])正交组合,令牌块顺序 = :root(亮默认)→默认暗块
+      →主题亮块(6 套)→主题暗块;切换入口在顶部导航,偏好由 ThemeSwitcher 写入 localStorage 并由
+      BaseLayout 内联脚本在首帧前恢复(避免闪烁)
    3. 基础重置、布局工具、文章排版(.prose)
    ========================================================= */
 
@@ -97,6 +100,8 @@
 
 /* ---------- 设计令牌 ---------- */
 :root {
+	/* 原生控件配色:以亮色为基准,暗色由 html[data-mode='dark'] 覆盖(滚动条/表单控件随模式切换) */
+	color-scheme: light;
 	/* 品牌主色:深靛蓝 */
 	--ink: #1e293b;
 	--ink-deep: #0f172a;
@@ -117,6 +122,24 @@
 	--text: #334155;
 	--text-muted: #64748b;
 
+	/* 半透明玻璃面(吸顶导航 / 目录条 / 移动端菜单面板) */
+	--glass: rgb(255 255 255 / 85%);
+	--glass-strong: rgb(255 255 255 / 96%);
+	/* 二级表面(行内代码 / 表头 / 占位纹理底色) */
+	--surface-2: #f1f5f9;
+	/* 引用块底色 */
+	--quote-bg: #fffbeb;
+	/* 高亮强调(主按钮悬停等) */
+	--amber-bright: #fbbf24;
+	/* 深色面背景(页脚 / 代码块)与面上的文字 */
+	--deep-bg: #0f172a;
+	--on-dark-strong: #f1f5f9;
+	--on-dark-soft: #94a3b8;
+	--on-dark-muted: #64748b;
+	/* 墨色面 / 琥珀面上的文字(选中态按钮、主按钮) */
+	--on-ink: #ffffff;
+	--on-amber: #0f172a;
+
 	/* 字体:全局无衬线栈(优先级:Noto Sans SC > OpenAI Sans > Geist Variable > SF Pro Text > SF Pro Display > PingFang SC > 系统) */
 	--font-sans: 'Noto Sans SC', 'OpenAI Sans', 'Geist Variable', 'SF Pro Text', 'SF Pro Display', 'PingFang SC',
 		ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
@@ -130,6 +153,362 @@
 	--shadow-card-hover: 0 2px 4px rgb(15 23 42 / 8%), 0 18px 40px -20px rgb(15 23 42 / 35%);
 
 	--max-width: 1080px;
+}
+
+/* ---------- 显示模式:暗色(默认主题;整块位于主题亮块之前) ----------
+   仅覆盖暗色下需变化的令牌;未覆盖的令牌由主题亮块兜底(同特异度、后位胜出),
+   各主题的差异覆盖见文件尾 html[data-mode='dark'][data-theme='xxx'] 块。
+   color-scheme 在本块覆盖 :root 的 light:所有暗态 html 均匹配,表单控件/滚动条随之切换原生配色。
+   对比度按 WCAG AA 校核:正文 12+ / 次要文字 7+ / 按钮(墨底亮字、琥珀底深字)8+。 */
+html[data-mode='dark'] {
+	color-scheme: dark;
+	/* 品牌色反向:暗底上墨色变亮、琥珀加深(文字用) */
+	--ink: #f1f5f9;
+	--ink-deep: #f8fafc;
+	--amber-deep: #fbbf24;
+	--amber-soft: rgb(245 158 11 / 16%);
+	/* Know 内容线:亮蓝 */
+	--blue: #60a5fa;
+	--blue-deep: #93c5fd;
+	--blue-soft: rgb(96 165 250 / 18%);
+	/* 表面:深色分层 */
+	--paper: #1e293b;
+	--mist: #0f172a;
+	--surface-2: #283548;
+	--quote-bg: #182236;
+	--line: #2c3a50;
+	/* 文字 */
+	--text: #cbd5e1;
+	--text-muted: #94a3b8;
+	/* 玻璃面 */
+	--glass: rgb(15 23 42 / 85%);
+	--glass-strong: rgb(15 23 42 / 96%);
+	/* 深色面(页脚 / 代码块)与墨色面文字 */
+	--deep-bg: #0b1120;
+	--on-ink: #0f172a;
+	/* 阴影:加深以适应暗面 */
+	--shadow-card: 0 1px 2px rgb(0 0 0 / 30%), 0 10px 30px -18px rgb(0 0 0 / 55%);
+	--shadow-card-hover: 0 2px 4px rgb(0 0 0 / 35%), 0 18px 40px -20px rgb(0 0 0 / 65%);
+}
+
+/* ---------- 配色主题:Claude 暖彩(色板出处 design/DESIGN-claude.md) ----------
+   仅覆盖色彩令牌,不动布局与字体;正文/次要文字对比度按 WCAG AA(≥4.5:1)校核:
+   text 10.3 / text-muted 4.9 / amber-deep 4.9(最浅的卡片面上)。
+   amber-deep 取自 Claude primary-active 并略加深,保证「珊瑚底小字 chip」仍达 4.5:1;
+   新增主题:在此追加 html[data-theme='xxx'] 覆盖块,并同步 ThemeSwitcher.astro 的主题清单。 */
+html[data-theme='claude'] {
+	/* 品牌墨色与深色面 */
+	--ink: #141413;
+	--ink-deep: #181715;
+	/* 珊瑚强调 */
+	--amber: #cc785c;
+	--amber-deep: #a04a30;
+	--amber-soft: #f5e7de;
+	--amber-bright: #e8a55a;
+	/* Know 内容线强调色:暖青 */
+	--blue: #5db8a6;
+	--blue-deep: #2b7265;
+	--blue-soft: #e7f1ec;
+	/* 表面:奶油画布打底、暖米卡片面 */
+	--paper: #efe9de;
+	--mist: #faf9f5;
+	--surface-2: #e8e0d2;
+	--quote-bg: #f5f0e8;
+	--line: #e6dfd8;
+	--text: #3d3d3a;
+	--text-muted: #66645e;
+	/* 玻璃面与深色面文字 */
+	--glass: rgb(250 249 245 / 85%);
+	--glass-strong: rgb(250 249 245 / 96%);
+	--on-dark-strong: #faf9f5;
+	--on-dark-soft: #a09d96;
+	--on-dark-muted: #8e8b82;
+	/* 深色面背景与墨色面 / 琥珀面上的文字 */
+	--deep-bg: #181715;
+	--on-ink: #ffffff;
+	--on-amber: #181715;
+	/* 阴影:暖黑调,避免蓝灰阴影叠在暖底色上 */
+	--shadow-card: 0 1px 2px rgb(24 23 21 / 5%), 0 10px 30px -18px rgb(24 23 21 / 30%);
+	--shadow-card-hover: 0 2px 4px rgb(24 23 21 / 7%), 0 18px 40px -20px rgb(24 23 21 / 40%);
+}
+
+/* ---------- 配色主题:Notion 蓝调(色板出处 design/DESIGN-notion.md) ----------
+   仅覆盖色彩令牌:暖纸画布 + 纯白卡面 + 近黑文字 + 单一蓝色强调(其余多彩仅作装饰色,不参与结构);
+   对比度按 WCAG AA 校核:按钮「深墨字对蓝底」4.6(悬停加亮 5.4)、链接 6.3+、次要文字 6.0+、深色面文字 4.6+。 */
+html[data-theme='notion'] {
+	/* 品牌墨色:近黑(按钮深墨字对蓝底需 ≥4.5,须保持纯黑级) */
+	--ink: #000000;
+	--ink-deep: #000000;
+	/* 单一蓝色强调(Notion blue / pressed;悬停用加亮变体以保深字可读) */
+	--amber: #0075de;
+	--amber-deep: #005bab;
+	--amber-soft: #e1effb;
+	--amber-bright: #1a84e0;
+	/* Know 内容线强调色:贴纸暖青 */
+	--blue: #2a9d99;
+	--blue-deep: #17706c;
+	--blue-soft: #e3f4f2;
+	/* 表面:暖纸画布、纯白卡面 */
+	--paper: #ffffff;
+	--mist: #f6f5f4;
+	--surface-2: #e9e8e6;
+	--quote-bg: #f6f5f4;
+	--line: #e6e6e6;
+	--text: #31302e;
+	--text-muted: #615d59;
+	/* 玻璃面与深色面文字 */
+	--glass: rgb(246 245 244 / 85%);
+	--glass-strong: rgb(246 245 244 / 96%);
+	--on-dark-strong: #f6f5f4;
+	--on-dark-soft: #a39e98;
+	--on-dark-muted: #79756f;
+	/* 深色面背景与墨色面 / 琥珀面上的文字 */
+	--deep-bg: #000000;
+	--on-ink: #ffffff;
+	--on-amber: #000000;
+	/* 阴影:纯黑微阴影,Notion 式「若有若无」 */
+	--shadow-card: 0 1px 2px rgb(0 0 0 / 5%), 0 10px 30px -18px rgb(0 0 0 / 25%);
+	--shadow-card-hover: 0 2px 4px rgb(0 0 0 / 6%), 0 18px 40px -20px rgb(0 0 0 / 30%);
+}
+
+/* ---------- 配色主题:Vercel 极简(色板出处 design/DESIGN-vercel.md) ----------
+   仅覆盖色彩令牌:近白画布 + 纯白卡面 + Geist 近黑文字 + 单一链接蓝强调(青色仅作 Know 线);
+   对比度按 WCAG AA 校核:按钮「纯黑字对蓝底」4.6(悬停 5.7)、链接 5.5+、次要文字 5.1+、深色面文字 6.5+。 */
+html[data-theme='vercel'] {
+	/* 品牌墨色:Geist 近黑(按钮深字需纯黑级) */
+	--ink: #171717;
+	--ink-deep: #000000;
+	/* 单一蓝色强调(Vercel link;悬停用加亮变体以保深字可读) */
+	--amber: #0070f3;
+	--amber-deep: #0761d1;
+	--amber-soft: #d3e5ff;
+	--amber-bright: #3291ff;
+	/* Know 内容线强调色:渐变青 */
+	--blue: #00dfd8;
+	--blue-deep: #0b6e60;
+	--blue-soft: #aaffec;
+	/* 表面:近白画布、纯白卡面 */
+	--paper: #ffffff;
+	--mist: #fafafa;
+	--surface-2: #f2f2f2;
+	--quote-bg: #f7f7f7;
+	--line: #ebebeb;
+	--text: #4d4d4d;
+	--text-muted: #6a6a6a;
+	/* 玻璃面与深色面文字 */
+	--glass: rgb(250 250 250 / 85%);
+	--glass-strong: rgb(250 250 250 / 96%);
+	--on-dark-strong: #ffffff;
+	--on-dark-soft: #a1a1a1;
+	--on-dark-muted: #8f8f8f;
+	/* 深色面背景与墨色面 / 琥珀面上的文字 */
+	--deep-bg: #000000;
+	--on-ink: #ffffff;
+	--on-amber: #000000;
+	/* 阴影:Geist 极低透明度分层影 */
+	--shadow-card: 0 1px 2px rgb(0 0 0 / 4%), 0 10px 30px -18px rgb(0 0 0 / 20%);
+	--shadow-card-hover: 0 2px 4px rgb(0 0 0 / 6%), 0 18px 40px -20px rgb(0 0 0 / 28%);
+}
+
+/* ---------- 配色主题:NVIDIA 绿(色板出处 design/DESIGN-nvidia.md) ----------
+   仅覆盖色彩令牌:纸白画布 + 纯黑文字 + 单一 NVIDIA 绿强调,hairline 分层、卡片无投影;
+   对比度按 WCAG AA 校核:按钮「黑字对绿底」8.7(悬停 16)、链接 4.6、次要文字 5.4、深色面文字 4.6+。 */
+html[data-theme='nvidia'] {
+	/* 品牌墨色:纯黑(NVIDIA ink) */
+	--ink: #000000;
+	--ink-deep: #000000;
+	/* 单一绿色强调(NVIDIA Green;悬停用 pale 绿,黑字可读性极高) */
+	--amber: #76b900;
+	--amber-deep: #3f8500;
+	--amber-soft: #e3f2cd;
+	--amber-bright: #bff230;
+	/* Know 内容线强调色:系统唯一蓝(内联链接色) */
+	--blue: #0046a4;
+	--blue-deep: #003a8c;
+	--blue-soft: #e6eef9;
+	/* 表面:纸白画布与卡面(NVIDIA 靠 hairline 分层,非明度差) */
+	--paper: #ffffff;
+	--mist: #ffffff;
+	--surface-2: #f7f7f7;
+	--quote-bg: #f7f7f7;
+	--line: #cccccc;
+	--text: #1a1a1a;
+	--text-muted: #6a6a6a;
+	/* 玻璃面与深色面文字 */
+	--glass: rgb(255 255 255 / 85%);
+	--glass-strong: rgb(255 255 255 / 96%);
+	--on-dark-strong: #ffffff;
+	--on-dark-soft: #b3b3b3;
+	--on-dark-muted: #757575;
+	/* 深色面背景与墨色面 / 琥珀面上的文字 */
+	--deep-bg: #000000;
+	--on-ink: #ffffff;
+	--on-amber: #000000;
+	/* 阴影:NVIDIA 扁平卡片无投影,仅悬停 5px 轻环境影 */
+	--shadow-card: 0 0 0 rgb(0 0 0 / 0%);
+	--shadow-card-hover: 0 0 5px rgb(0 0 0 / 30%);
+}
+
+/* ---------- 配色主题:Supabase 翠绿(色板出处 design/DESIGN-supabase.md) ----------
+   仅覆盖色彩令牌:纯白画布 + 近黑文字 + 翡翠绿 CTA(深墨字),次级紫罗兰作 Know 线;
+   对比度按 WCAG AA 校核:按钮「近黑字对绿底」9.0(悬停 10.3)、链接 5.1+、次要文字 5.0+、深色面文字 5.2+。 */
+html[data-theme='supabase'] {
+	/* 品牌墨色:近黑(never pure black) */
+	--ink: #171717;
+	--ink-deep: #171717;
+	/* 翡翠绿 CTA(on-primary 即近黑字;悬停用更亮的 primary-soft) */
+	--amber: #3ecf8e;
+	--amber-deep: #0f7a50;
+	--amber-soft: #d4f4e5;
+	--amber-bright: #4ade80;
+	/* Know 内容线强调色:次级紫罗兰 */
+	--blue: #644fc1;
+	--blue-deep: #4b3a9e;
+	--blue-soft: #eddbf9;
+	/* 表面:纯白画布与卡面 */
+	--paper: #ffffff;
+	--mist: #ffffff;
+	--surface-2: #efefef;
+	--quote-bg: #f7f7f7;
+	--line: #dfdfdf;
+	--text: #212121;
+	--text-muted: #707070;
+	/* 玻璃面与深色面文字 */
+	--glass: rgb(255 255 255 / 85%);
+	--glass-strong: rgb(255 255 255 / 96%);
+	--on-dark-strong: #ffffff;
+	--on-dark-soft: #a3a3a3;
+	--on-dark-muted: #8a8a8a;
+	/* 深色面背景与墨色面 / 琥珀面上的文字 */
+	--deep-bg: #171717;
+	--on-ink: #ffffff;
+	--on-amber: #171717;
+	/* 阴影:Supabase 轻量层级(1px 卡片影,悬停加深) */
+	--shadow-card: 0 1px 3px rgb(0 0 0 / 6%), 0 8px 24px -12px rgb(0 0 0 / 8%);
+	--shadow-card-hover: 0 2px 6px rgb(0 0 0 / 8%), 0 16px 48px -16px rgb(0 0 0 / 12%);
+}
+
+/* ---------- 显示模式:暗色 × 各主题(整块位于主题亮块之后,双属性选择器提升优先级) ----------
+   仅覆盖该主题暗色下需变化的令牌;颜色未列出的(amber / amber-bright / on-amber / on-dark-*)
+   沿用亮块值,由「墨色面 / 琥珀面文字」令牌保证按钮文字可读。 */
+
+/* Claude 暖彩暗:近黑暖底 + 珊瑚/暖青提亮 */
+html[data-mode='dark'][data-theme='claude'] {
+	--ink: #faf9f5;
+	--ink-deep: #faf9f5;
+	--amber-deep: #e8a55a;
+	--amber-soft: rgb(204 120 92 / 18%);
+	--blue: #5db8a6;
+	--blue-deep: #6cc9b6;
+	--blue-soft: rgb(93 184 166 / 16%);
+	--paper: #262624;
+	--mist: #1f1e1b;
+	--surface-2: #33322f;
+	--quote-bg: #2a2926;
+	--line: #3a3935;
+	--text: #e8e6df;
+	--text-muted: #a5a29a;
+	--glass: rgb(31 30 27 / 85%);
+	--glass-strong: rgb(31 30 27 / 96%);
+	--deep-bg: #181715;
+	--on-ink: #1f1e1b;
+	--shadow-card: 0 1px 2px rgb(12 11 10 / 35%), 0 10px 30px -18px rgb(12 11 10 / 60%);
+	--shadow-card-hover: 0 2px 4px rgb(12 11 10 / 40%), 0 18px 40px -20px rgb(12 11 10 / 70%);
+}
+
+/* Notion 蓝调暗:中性灰阶 + 提亮蓝 */
+html[data-mode='dark'][data-theme='notion'] {
+	--ink: #f1f1ef;
+	--ink-deep: #ffffff;
+	--amber-deep: #4da3e8;
+	--amber-soft: rgb(0 117 222 / 20%);
+	--blue: #2a9d99;
+	--blue-deep: #2a9d99;
+	--blue-soft: rgb(42 157 153 / 16%);
+	--paper: #202020;
+	--mist: #191919;
+	--surface-2: #2a2a2a;
+	--quote-bg: #242424;
+	--line: #333333;
+	--text: #d4d4d4;
+	--text-muted: #9a9a9a;
+	--glass: rgb(25 25 25 / 85%);
+	--glass-strong: rgb(25 25 25 / 96%);
+	--deep-bg: #111111;
+	--on-ink: #191919;
+	--shadow-card: 0 1px 2px rgb(0 0 0 / 40%), 0 10px 30px -18px rgb(0 0 0 / 60%);
+	--shadow-card-hover: 0 2px 4px rgb(0 0 0 / 45%), 0 18px 40px -20px rgb(0 0 0 / 70%);
+}
+
+/* Vercel 极简暗:纯黑画布 + 提亮链接蓝/渐变青 */
+html[data-mode='dark'][data-theme='vercel'] {
+	--ink: #ededed;
+	--ink-deep: #ffffff;
+	--amber-deep: #3291ff;
+	--amber-soft: rgb(50 145 255 / 20%);
+	--blue: #00dfd8;
+	--blue-deep: #00dfd8;
+	--blue-soft: rgb(0 223 216 / 14%);
+	--paper: #111111;
+	--mist: #000000;
+	--surface-2: #1a1a1a;
+	--quote-bg: #101010;
+	--line: #2a2a2a;
+	--text: #ededed;
+	--text-muted: #8f8f8f;
+	--glass: rgb(0 0 0 / 85%);
+	--glass-strong: rgb(0 0 0 / 96%);
+	--deep-bg: #0a0a0a;
+	--on-ink: #000000;
+	--shadow-card: 0 1px 2px rgb(0 0 0 / 40%), 0 10px 30px -18px rgb(0 0 0 / 60%);
+	--shadow-card-hover: 0 2px 4px rgb(0 0 0 / 45%), 0 18px 40px -20px rgb(0 0 0 / 70%);
+}
+
+/* NVIDIA 绿暗:纯黑画布 + hairline 加深(浅面 hairline 在暗底上不可见,此为必要变更);
+   阴影沿用亮块(NVIDIA 扁平卡片无投影,悬停轻影在暗底弱化,符合品牌风格) */
+html[data-mode='dark'][data-theme='nvidia'] {
+	--ink: #ffffff;
+	--ink-deep: #ffffff;
+	--amber-deep: #76b900;
+	--amber-soft: rgb(118 185 0 / 16%);
+	--blue: #93b8ff;
+	--blue-deep: #93b8ff;
+	--blue-soft: rgb(0 70 164 / 40%);
+	--paper: #1a1a1a;
+	--mist: #000000;
+	--surface-2: #262626;
+	--quote-bg: #1f1f1f;
+	--line: #5e5e5e;
+	--text: #ffffff;
+	--text-muted: #b3b3b3;
+	--glass: rgb(0 0 0 / 85%);
+	--glass-strong: rgb(0 0 0 / 96%);
+	--deep-bg: #111111;
+	--on-ink: #000000;
+}
+
+/* Supabase 翠绿暗:中性深灰 + 翡翠绿/紫罗兰提亮 */
+html[data-mode='dark'][data-theme='supabase'] {
+	--ink: #ededed;
+	--ink-deep: #ffffff;
+	--amber-deep: #3ecf8e;
+	--amber-soft: rgb(62 207 142 / 16%);
+	--blue: #a89bf5;
+	--blue-deep: #a89bf5;
+	--blue-soft: rgb(107 1 194 / 35%);
+	--paper: #202020;
+	--mist: #1c1c1c;
+	--surface-2: #2a2a2a;
+	--quote-bg: #242424;
+	--line: #363636;
+	--text: #e2e2e2;
+	--text-muted: #9a9a9a;
+	--glass: rgb(28 28 28 / 85%);
+	--glass-strong: rgb(28 28 28 / 96%);
+	--deep-bg: #161616;
+	--on-ink: #1c1c1c;
+	--shadow-card: 0 1px 3px rgb(0 0 0 / 40%), 0 8px 24px -12px rgb(0 0 0 / 50%);
+	--shadow-card-hover: 0 2px 6px rgb(0 0 0 / 45%), 0 16px 48px -16px rgb(0 0 0 / 60%);
 }
 
 /* ---------- 基础重置 ---------- */
@@ -360,7 +739,7 @@ html[data-font-size='large'] {
 	padding: 0.9em 1.25em;
 	border-left: 3px solid var(--amber);
 	border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-	background: #fffbeb;
+	background: var(--quote-bg);
 	color: var(--ink);
 }
 
@@ -371,7 +750,7 @@ html[data-font-size='large'] {
 .prose code {
 	font-family: var(--font-mono);
 	font-size: 0.88em;
-	background: #f1f5f9;
+	background: var(--surface-2);
 	padding: 0.15em 0.45em;
 	border-radius: 5px;
 	color: var(--ink);
@@ -381,7 +760,7 @@ html[data-font-size='large'] {
 	margin-block: 1.5em;
 	padding: 1.1em 1.25em;
 	border-radius: var(--radius-md);
-	background: var(--ink-deep);
+	background: var(--deep-bg);
 	color: #e2e8f0;
 	overflow-x: auto;
 	line-height: 1.6;
@@ -456,7 +835,7 @@ html[data-font-size='large'] {
 
 .prose .code-copy.is-done {
 	color: var(--amber);
-	border-color: rgb(245 158 11 / 50%);
+	border-color: color-mix(in srgb, var(--amber) 50%, transparent);
 }
 
 /* 行号:Shiki 每行渲染为 .line,用 CSS 计数器在行首生成序号。
@@ -503,7 +882,7 @@ html[data-font-size='large'] {
 .prose a {
 	color: var(--amber-deep);
 	text-decoration: underline;
-	text-decoration-color: rgb(245 158 11 / 45%);
+	text-decoration-color: color-mix(in srgb, var(--amber) 45%, transparent);
 	text-underline-offset: 3px;
 	text-decoration-thickness: 1.5px;
 }
@@ -559,13 +938,13 @@ html[data-font-size='large'] {
 }
 
 .prose th {
-	background: #f1f5f9;
+	background: var(--surface-2);
 	font-weight: 600;
 	white-space: nowrap;
 }
 
 .prose tbody tr:nth-child(even) {
-	background: #f8fafc;
+	background: var(--mist);
 }
 
 /* 小屏:表格转为可横向滚动的块,避免挤压换行 */
@@ -639,7 +1018,7 @@ html[data-font-size='large'] {
 
 .view-switch button[aria-pressed='true'] {
 	background: var(--ink);
-	color: #fff;
+	color: var(--on-ink);
 }
 
 .entries-status {
@@ -744,7 +1123,7 @@ html[data-font-size='large'] {
 .entries-pager button[aria-current='page'] {
 	background: var(--ink);
 	border-color: var(--ink);
-	color: #fff;
+	color: var(--on-ink);
 	font-weight: 600;
 }
 
@@ -1218,7 +1597,7 @@ html[data-font-size='large'] {
 }
 
 .source-title a:hover {
-	color: var(--blue);
+	color: var(--blue-deep);
 }
 
 .source-links {

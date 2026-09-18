@@ -1,5 +1,6 @@
 ---
 import { SITE } from '../consts';
+import ThemeSwitcher from './ThemeSwitcher.astro';
 
 const pathname = Astro.url.pathname;
 
@@ -72,6 +73,8 @@ function isActive(href: string): boolean {
 				<span class="nav-search-label">搜索</span>
 			</a>
 		</nav>
+		<!-- 配色主题切换(默认 / Claude 暖调;新增主题见 ThemeSwitcher.astro) -->
+		<ThemeSwitcher />
 		<!-- 汉堡菜单按钮:仅窄屏显示;图标矢量数据取自 reicon-react 包(Menu,O 权重) -->
 		<button
 			class="nav-toggle"
@@ -113,7 +116,7 @@ function isActive(href: string): boolean {
 		position: sticky;
 		top: 0;
 		z-index: 40;
-		background: rgb(255 255 255 / 85%);
+		background: var(--glass);
 		backdrop-filter: blur(10px);
 		border-bottom: 1px solid var(--line);
 	}
@@ -122,6 +125,7 @@ function isActive(href: string): boolean {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		gap: 0.35rem;
 		height: 64px;
 	}
 
@@ -207,9 +211,11 @@ function isActive(href: string): boolean {
 		}
 	}
 
+	/* 右侧留白由导航吸收:桌面端导航与主题切换器整体贴右 */
 	.site-nav {
 		display: flex;
 		gap: 0.25rem;
+		margin-left: auto;
 	}
 
 	.nav-link {
@@ -260,7 +266,7 @@ function isActive(href: string): boolean {
 
 	.nav-toggle:hover {
 		color: var(--ink-deep);
-		background: rgb(15 23 42 / 6%);
+		background: color-mix(in srgb, var(--ink-deep) 6%, transparent);
 	}
 
 	.nav-toggle svg {
@@ -284,10 +290,10 @@ function isActive(href: string): boolean {
 			align-items: stretch;
 			gap: 0;
 			padding: 0.35rem 0.9rem 0.65rem;
-			background: rgb(255 255 255 / 96%);
+			background: var(--glass-strong);
 			backdrop-filter: blur(10px);
 			border-bottom: 1px solid var(--line);
-			box-shadow: 0 14px 28px rgb(15 23 42 / 8%);
+			box-shadow: 0 14px 28px color-mix(in srgb, var(--deep-bg) 8%, transparent);
 		}
 
 		.site-nav.is-open {
